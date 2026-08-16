@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import type { JalaliCalendarCell, JalaliDate } from "../core/types";
+import React from "react";
+import { useTheme } from "../theme/ThemeProvider";
 import { toPersianDigits } from "../formatters/persian-digits";
-import { getAriaDayLabel } from "../a11y/aria-helpers";
+import type { JalaliDate, JalaliCalendarCell } from "../core/types";
 import type { CalendarEvent } from "../events/types";
 import type {
   DatePickerClassNames,
@@ -9,243 +9,136 @@ import type {
 } from "../theme/style-slots";
 
 export interface DayCellProps {
-  cell: JalaliCalendarCell;
-  tabIndex: number;
-  digitType?: "persian" | "latin";
+  cell?:
+    | JalaliCalendarCell
+    | (Partial<JalaliCalendarCell> & {
+        day?: number;
+        isHoliday?: boolean;
+        isDisabled?: boolean;
+      });
+  day?: number;
+  isCurrentMonth?: boolean;
+  isSelected?: boolean;
+  isToday?: boolean;
   isHoliday?: boolean;
+  isInRange?: boolean;
+  isRangeStart?: boolean;
+  isRangeEnd?: boolean;
+  disabled?: boolean;
+  digitType?: "persian" | "latin";
   holidayTitle?: string;
   events?: CalendarEvent[];
+  tabIndex?: number;
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;
-  onSelect: (date: JalaliDate) => void;
-  onHover?: (date: JalaliDate | null) => void;
-  onFocus?: (date: JalaliDate) => void;
+  onSelect?: (target: JalaliDate) => void;
+  onHover?: (target: JalaliDate | null) => void;
+  onFocus?: (target: JalaliDate) => void;
+  onClick?: () => void;
 }
 
-export const DayCell: React.FC<DayCellProps> = ({
-  cell,
-  tabIndex,
-  digitType = "persian",
-  isHoliday = false,
-  holidayTitle,
-  events = [],
-  classNames,
-  styles,
-  onSelect,
-  onHover,
-  onFocus,
-}) => {
-  const {
-    jalali,
-    isCurrentMonth,
-    isToday,
-    isSelected,
-    isDisabled,
-    isInRange,
-    isRangeStart,
-    isRangeEnd,
-  } = cell;
+export const DayCell: React.FC<DayCellProps> = (props) => {
+  const { theme } = useTheme();
 
-  const [isHovered, setIsHovered] = useState(false);
+  const cell = props.cell;
+  const jalaliDate: JalaliDate = cell?.jalali ?? {
+    year: 1403,
+    month: 1,
+    day: props.day ?? (cell && "day" in cell ? (cell as any).day : 1),
+  };
 
-  const dayDisplay =
-    digitType === "persian" ? toPersianDigits(cell.dayNumber) : cell.dayNumber;
-  let ariaLabel = getAriaDayLabel(jalali);
+  const dayNumber = jalaliDate.day;
+  const isCurrentMonth = cell?.isCurrentMonth ?? props.isCurrentMonth ?? true;
+  const isSelected = cell?.isSelected ?? props.isSelected ?? false;
+  const isToday = cell?.isToday ?? props.isToday ?? false;
+  const isHoliday =
+    props.isHoliday ??
+    (cell && "isHoliday" in cell ? (cell as any).isHoliday : false);
+  const isInRange = cell?.isInRange ?? props.isInRange ?? false;
+  const isRangeStart = cell?.isRangeStart ?? props.isRangeStart ?? false;
+  const isRangeEnd = cell?.isRangeEnd ?? props.isRangeEnd ?? false;
+  const disabled = cell?.isDisabled ?? props.disabled ?? false;
 
-  if (isHoliday && holidayTitle) {
-    ariaLabel += ` (${holidayTitle})`;
-  }
-
-  // Base Dynamic Styles
   let backgroundColor = "transparent";
   let textColor = isCurrentMonth
-    ? isHoliday
-      ? "var(--pdp-holiday-color, #ef4444)"
-      : "var(--pdp-text-primary, #0f172a)"
-    : "var(--pdp-text-disabled, #cbd5e1)";
+    ? theme.colors.textPrimary
+    : theme.colors.textDisabled;
 
-  if (isInRange && !isSelected) {
-    backgroundColor = "var(--pdp-range-between-bg, #e0f2fe)";
-    textColor = "var(--pdp-range-between-text, #0369a1)";
+  if (isInRange && isCurrentMonth) {
+    backgroundColor = theme.colors.rangeBackground;
   }
 
   if (isSelected || isRangeStart || isRangeEnd) {
-    backgroundColor = "var(--pdp-primary-color, #0284c7)";
-    textColor = "var(--pdp-primary-contrast-text, #ffffff)";
+    backgroundColor = theme.colors.primary;
+    textColor = theme.colors.primaryText;
+  } else if (isHoliday && isCurrentMonth) {
+    textColor = theme.colors.holiday;
   }
 
-  // Aggregate dynamic classNames
-  const combinedClasses = [
-    classNames?.dayCell,
-    isToday && classNames?.todayCell,
-    isSelected && classNames?.selectedCell,
-    isInRange && !isSelected && classNames?.rangeBetweenCell,
-    isDisabled && classNames?.disabledCell,
-    isHoliday && classNames?.holidayCell,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
-  // Aggregate dynamic custom styles
-  const combinedStyles: React.CSSProperties = {
-    width: "var(--pdp-cell-size, 36px)",
-    height: "var(--pdp-cell-size, 36px)",
-    display: "inline-flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius:
-      isRangeStart || isRangeEnd || (!isInRange && isSelected)
-        ? "var(--pdp-border-radius, 8px)"
-        : "4px",
-    border:
-      isToday && !isSelected
-        ? "1px solid var(--pdp-today-indicator-color, #0284c7)"
-        : "none",
-    backgroundColor,
-    color: textColor,
-    fontWeight: isToday || isSelected || isHoliday ? 700 : 400,
-    fontSize: "14px",
-    cursor: isDisabled ? "not-allowed" : "pointer",
-    opacity: isDisabled ? 0.4 : 1,
-    transition: "background-color 0.15s ease, color 0.15s ease",
-    outline: "none",
-    position: "relative",
-    ...styles?.dayCell,
-    ...(isToday ? styles?.todayCell : {}),
-    ...(isSelected ? styles?.selectedCell : {}),
-    ...(isInRange && !isSelected ? styles?.rangeBetweenCell : {}),
-    ...(isDisabled ? styles?.disabledCell : {}),
-    ...(isHoliday ? styles?.holidayCell : {}),
+  const handleClick = () => {
+    if (disabled || !isCurrentMonth) return;
+    if (props.onClick) props.onClick();
+    if (props.onSelect) props.onSelect(jalaliDate);
   };
 
-  const hasEvents = events.length > 0;
-  const primaryBadgeColor = hasEvents
-    ? (events[0].color ?? "var(--pdp-primary-color, #0284c7)")
-    : undefined;
-
   return (
-    <div
-      style={{ position: "relative", display: "inline-flex" }}
-      onMouseEnter={() => {
-        setIsHovered(true);
-        if (!isDisabled) onHover?.(jalali);
+    <button
+      type="button"
+      tabIndex={props.tabIndex ?? 0}
+      disabled={disabled || !isCurrentMonth}
+      onClick={handleClick}
+      onFocus={() => props.onFocus?.(jalaliDate)}
+      style={{
+        width: "36px",
+        height: "36px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        border:
+          isToday && !isSelected && !isRangeStart && !isRangeEnd
+            ? `1.5px solid ${theme.colors.todayBorder}`
+            : "none",
+        borderRadius:
+          isRangeStart || isRangeEnd || isSelected
+            ? theme.radii.md
+            : isInRange
+              ? "0px"
+              : theme.radii.md,
+        backgroundColor,
+        color: textColor,
+        cursor: disabled || !isCurrentMonth ? "default" : "pointer",
+        fontSize: "0.85rem",
+        fontWeight: isSelected || isToday ? 700 : 500,
+        transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
+        opacity: !isCurrentMonth ? 0.3 : 1,
+        outline: "none",
+        ...props.styles?.dayCell,
       }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        onHover?.(null);
+      onMouseEnter={(e) => {
+        props.onHover?.(jalaliDate);
+        if (
+          isCurrentMonth &&
+          !disabled &&
+          !isSelected &&
+          !isRangeStart &&
+          !isRangeEnd
+        ) {
+          e.currentTarget.style.backgroundColor = isHoliday
+            ? theme.colors.holidayBackground
+            : theme.colors.backgroundHover;
+          e.currentTarget.style.transform = "scale(1.08)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isSelected && !isRangeStart && !isRangeEnd) {
+          e.currentTarget.style.backgroundColor = isInRange
+            ? theme.colors.rangeBackground
+            : "transparent";
+          e.currentTarget.style.transform = "scale(1)";
+        }
       }}
     >
-      <button
-        type="button"
-        role="gridcell"
-        tabIndex={isDisabled ? -1 : tabIndex}
-        aria-selected={isSelected || isRangeStart || isRangeEnd}
-        aria-disabled={isDisabled}
-        aria-label={ariaLabel}
-        disabled={isDisabled}
-        onClick={() => !isDisabled && onSelect(jalali)}
-        onFocus={() => !isDisabled && onFocus?.(jalali)}
-        className={combinedClasses || undefined}
-        style={combinedStyles}
-      >
-        <span style={{ lineHeight: 1 }}>{dayDisplay}</span>
-
-        {hasEvents && !isSelected && (
-          <div
-            className={classNames?.eventBadge}
-            style={{
-              display: "flex",
-              gap: "2px",
-              position: "absolute",
-              bottom: "3px",
-              ...styles?.eventBadge,
-            }}
-          >
-            {events.slice(0, 3).map((ev, idx) => (
-              <span
-                key={idx}
-                style={{
-                  width: "4px",
-                  height: "4px",
-                  borderRadius: "50%",
-                  backgroundColor: ev.color ?? primaryBadgeColor,
-                  display: "inline-block",
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </button>
-
-      {/* Hover Tooltip */}
-      {isHovered && (hasEvents || (isHoliday && holidayTitle)) && (
-        <div
-          role="tooltip"
-          style={{
-            position: "absolute",
-            bottom: "calc(100% + 6px)",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 100,
-            backgroundColor: "#0f172a",
-            color: "#f8fafc",
-            padding: "6px 10px",
-            borderRadius: "6px",
-            fontSize: "11px",
-            whiteSpace: "nowrap",
-            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.3)",
-            pointerEvents: "none",
-            display: "flex",
-            flexDirection: "column",
-            gap: "2px",
-            minWidth: "max-content",
-            maxWidth: "200px",
-            textAlign: "center",
-          }}
-        >
-          {isHoliday && holidayTitle && (
-            <div style={{ color: "#f87171", fontWeight: 600 }}>
-              {holidayTitle}
-            </div>
-          )}
-          {events.map((ev) => (
-            <div
-              key={ev.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                justifyContent: "center",
-              }}
-            >
-              {ev.color && (
-                <span
-                  style={{
-                    width: "6px",
-                    height: "6px",
-                    borderRadius: "50%",
-                    backgroundColor: ev.color,
-                    display: "inline-block",
-                  }}
-                />
-              )}
-              <span style={{ fontWeight: 500 }}>{ev.title}</span>
-            </div>
-          ))}
-          <div
-            style={{
-              position: "absolute",
-              top: "100%",
-              left: "50%",
-              transform: "translateX(-50%)",
-              borderWidth: "4px",
-              borderStyle: "solid",
-              borderColor: "#0f172a transparent transparent transparent",
-            }}
-          />
-        </div>
-      )}
-    </div>
+      {props.digitType === "latin" ? dayNumber : toPersianDigits(dayNumber)}
+    </button>
   );
 };

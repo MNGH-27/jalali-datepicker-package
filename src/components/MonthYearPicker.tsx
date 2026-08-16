@@ -1,14 +1,13 @@
-import React, { useState } from "react";
-import type { JalaliMonthIndex } from "../core/types";
+import React, { useRef, useEffect } from "react";
+import { useTheme } from "../theme/ThemeProvider";
 import { PERSIAN_MONTH_NAMES } from "../core/constants";
 import { toPersianDigits } from "../formatters/persian-digits";
 
 export interface MonthYearPickerProps {
   currentYear: number;
-  currentMonth: JalaliMonthIndex;
-  onSelectMonth: (month: JalaliMonthIndex) => void;
+  currentMonth: number;
+  onSelectMonth: (month: number) => void;
   onSelectYear: (year: number) => void;
-  onClose: () => void;
 }
 
 export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
@@ -16,171 +15,137 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
   currentMonth,
   onSelectMonth,
   onSelectYear,
-  onClose,
 }) => {
-  const [viewMode, setViewMode] = useState<"months" | "years">("months");
-  const [yearPageStart, setYearPageStart] = useState(
-    Math.floor(currentYear / 12) * 12,
-  );
+  const { theme } = useTheme();
+  const selectedYearRef = useRef<HTMLButtonElement | null>(null);
 
-  const years = Array.from({ length: 12 }, (_, i) => yearPageStart + i);
+  useEffect(() => {
+    if (selectedYearRef.current) {
+      selectedYearRef.current.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
+    }
+  }, [currentYear]);
 
   return (
     <div
       style={{
-        padding: "8px",
-        backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-        borderRadius: "var(--pdp-border-radius, 8px)",
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        padding: "12px",
+        width: "100%",
+        height: "280px",
+        boxSizing: "border-box",
+        justifyContent: "space-between",
       }}
     >
-      {/* Header Selector Switch */}
+      {/* اسکرول افقی سال‌ها */}
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "12px",
+          gap: "6px",
+          overflowX: "auto",
+          paddingBottom: "4px",
+          scrollbarWidth: "none",
         }}
       >
-        <button
-          type="button"
-          onClick={() =>
-            viewMode === "years" ? setYearPageStart((y) => y - 12) : null
-          }
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "16px",
-            color: "var(--pdp-text-primary)",
-          }}
-        >
-          ‹
-        </button>
-
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            type="button"
-            onClick={() => setViewMode("months")}
-            style={{
-              fontWeight: viewMode === "months" ? 700 : 400,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--pdp-primary-color, #0284c7)",
-            }}
-          >
-            {PERSIAN_MONTH_NAMES[currentMonth]}
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("years")}
-            style={{
-              fontWeight: viewMode === "years" ? 700 : 400,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "var(--pdp-primary-color, #0284c7)",
-            }}
-          >
-            {toPersianDigits(currentYear)}
-          </button>
-        </div>
-
-        <button
-          type="button"
-          onClick={() =>
-            viewMode === "years" ? setYearPageStart((y) => y + 12) : null
-          }
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            fontSize: "16px",
-            color: "var(--pdp-text-primary)",
-          }}
-        >
-          ›
-        </button>
+        {Array.from({ length: 35 }, (_, i) => currentYear - 17 + i).map(
+          (year) => {
+            const isSelected = year === currentYear;
+            return (
+              <button
+                key={year}
+                ref={isSelected ? selectedYearRef : undefined}
+                type="button"
+                onClick={() => onSelectYear(year)}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: theme.radii.md,
+                  border: "none",
+                  background: isSelected ? theme.colors.primary : "transparent",
+                  color: isSelected
+                    ? theme.colors.primaryText
+                    : theme.colors.textPrimary,
+                  cursor: "pointer",
+                  fontWeight: isSelected ? 700 : 500,
+                  fontSize: "0.85rem",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.15s ease",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected)
+                    e.currentTarget.style.backgroundColor =
+                      theme.colors.backgroundHover;
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected)
+                    e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                {toPersianDigits(year)}
+              </button>
+            );
+          },
+        )}
       </div>
 
-      {/* Grid of Months */}
-      {viewMode === "months" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "8px",
-          }}
-        >
-          {PERSIAN_MONTH_NAMES.map((name, index) => (
+      {/* ماتریس ۳ در ۴ ماه‌های سال */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gridTemplateRows: "repeat(4, 1fr)",
+          gap: "8px",
+          flex: 1,
+        }}
+      >
+        {PERSIAN_MONTH_NAMES.map((name, index) => {
+          const isSelected = index + 1 === currentMonth;
+          return (
             <button
               key={name}
               type="button"
-              onClick={() => {
-                onSelectMonth(index as JalaliMonthIndex);
-                onClose();
-              }}
+              onClick={() => onSelectMonth(index + 1)}
               style={{
-                padding: "8px 4px",
-                borderRadius: "6px",
+                borderRadius: theme.radii.md,
                 border: "none",
+                background: isSelected
+                  ? theme.colors.primary
+                  : theme.colors.surface,
+                color: isSelected
+                  ? theme.colors.primaryText
+                  : theme.colors.textPrimary,
                 cursor: "pointer",
-                backgroundColor:
-                  currentMonth === index
-                    ? "var(--pdp-primary-color, #0284c7)"
-                    : "transparent",
-                color:
-                  currentMonth === index
-                    ? "#ffffff"
-                    : "var(--pdp-text-primary, #0f172a)",
-                fontSize: "13px",
+                fontWeight: isSelected ? 700 : 500,
+                fontSize: "0.85rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.15s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor =
+                    theme.colors.backgroundHover;
+                  e.currentTarget.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) {
+                  e.currentTarget.style.backgroundColor = theme.colors.surface;
+                  e.currentTarget.style.transform = "translateY(0)";
+                }
               }}
             >
               {name}
             </button>
-          ))}
-        </div>
-      )}
-
-      {/* Grid of Years */}
-      {viewMode === "years" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: "8px",
-          }}
-        >
-          {years.map((yr) => (
-            <button
-              key={yr}
-              type="button"
-              onClick={() => {
-                onSelectYear(yr);
-                setViewMode("months");
-              }}
-              style={{
-                padding: "8px 4px",
-                borderRadius: "6px",
-                border: "none",
-                cursor: "pointer",
-                backgroundColor:
-                  currentYear === yr
-                    ? "var(--pdp-primary-color, #0284c7)"
-                    : "transparent",
-                color:
-                  currentYear === yr
-                    ? "#ffffff"
-                    : "var(--pdp-text-primary, #0f172a)",
-                fontSize: "13px",
-              }}
-            >
-              {toPersianDigits(yr)}
-            </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 };

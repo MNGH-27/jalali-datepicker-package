@@ -1,156 +1,89 @@
+// src/components/footer/CalendarFooter.tsx
 import React from "react";
-import type { CalendarFooterProps } from "./types";
-import { formatJalaliDate } from "../../formatters/jalali-formatter";
-import { formatTimeString } from "../../plugins/time-picker/time-utils";
-import { toPersianDigits } from "../../formatters/persian-digits";
-import type {
-  DatePickerClassNames,
-  DatePickerStyles,
-} from "../../theme/style-slots";
+import { useTheme } from "../../theme/ThemeProvider";
 
-export interface ExtendedCalendarFooterProps extends CalendarFooterProps {
-  classNames?: DatePickerClassNames;
-  styles?: DatePickerStyles;
+export interface CalendarFooterProps {
+  onTodayClick?: () => void;
+  onClearClick?: () => void;
+  showClear?: boolean;
+  mode?: any;
+  digitType?: "persian" | "latin";
+  showStatusText?: boolean;
+  showActions?: boolean;
+  selectedDate?: any;
+  selectedRange?: any;
+  styles?: any;
+  [key: string]: any;
 }
 
-export const CalendarFooter: React.FC<ExtendedCalendarFooterProps> = ({
-  selectedDate,
-  selectedRange,
-  selectedDates,
-  selectedTime,
-  mode = "single",
-  digitType = "persian",
-  showStatusText = true,
-  showActions = true,
-  onToday,
-  onClear,
-  onConfirm,
-  classNames,
-  styles,
+export const CalendarFooter: React.FC<CalendarFooterProps> = ({
+  onTodayClick,
+  onClearClick,
+  showClear = true,
 }) => {
-  const getStatusText = (): string => {
-    let text = "هیچ تاریخی انتخاب نشده است";
+  const { theme } = useTheme();
 
-    if (mode === "single" && selectedDate) {
-      text = formatJalaliDate(selectedDate, "dddd D MMMM YYYY", { digitType });
-      if (selectedTime) {
-        text += ` - ${formatTimeString(selectedTime, false, digitType)}`;
-      }
-    } else if (mode === "range") {
-      const [start, end] = selectedRange || [null, null];
-      if (start && end) {
-        text = `${formatJalaliDate(start, "YYYY/MM/DD", { digitType })} تا ${formatJalaliDate(end, "YYYY/MM/DD", { digitType })}`;
-      } else if (start) {
-        text = `شروع: ${formatJalaliDate(start, "YYYY/MM/DD", { digitType })} (پایان را انتخاب کنید)`;
-      }
-    } else if (
-      mode === "multiple" &&
-      selectedDates &&
-      selectedDates.length > 0
-    ) {
-      const countStr =
-        digitType === "persian"
-          ? toPersianDigits(selectedDates.length)
-          : selectedDates.length;
-      text = `${countStr} روز انتخاب شده`;
-    }
-
-    return text;
+  const buttonStyle: React.CSSProperties = {
+    padding: "6px 14px",
+    borderRadius: theme.radii.md,
+    border: `1px solid ${theme.colors.border}`,
+    background: "transparent",
+    color: theme.colors.textPrimary,
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 0.15s ease",
   };
 
   return (
     <div
-      className={classNames?.footer}
       style={{
-        marginTop: "8px",
-        paddingTop: "8px",
-        borderTop: "1px solid var(--pdp-surface-border, #e2e8f0)",
         display: "flex",
-        flexDirection: "column",
-        gap: "6px",
-        ...styles?.footer,
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "10px 12px",
+        borderTop: `1px solid ${theme.colors.border}`,
+        marginTop: "6px",
       }}
     >
-      {showStatusText && (
-        <div
-          aria-live="polite"
+      {onTodayClick && (
+        <button
+          type="button"
+          onClick={onTodayClick}
           style={{
-            fontSize: "12px",
-            color: "var(--pdp-text-secondary, #475569)",
-            textAlign: "center",
-            minHeight: "18px",
-            fontWeight: 500,
+            ...buttonStyle,
+            borderColor: theme.colors.primary,
+            color: theme.colors.primary,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              theme.colors.backgroundHover;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
-          {getStatusText()}
-        </div>
+          برو به امروز
+        </button>
       )}
 
-      {showActions && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "8px",
+      {showClear && onClearClick && (
+        <button
+          type="button"
+          onClick={onClearClick}
+          style={buttonStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              theme.colors.backgroundHover;
+            e.currentTarget.style.color = theme.colors.holiday;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.color = theme.colors.textPrimary;
           }}
         >
-          <div style={{ display: "flex", gap: "4px" }}>
-            {onToday && (
-              <button
-                type="button"
-                onClick={onToday}
-                style={{
-                  padding: "3px 8px",
-                  fontSize: "11px",
-                  borderRadius: "4px",
-                  border: "1px solid var(--pdp-surface-border, #e2e8f0)",
-                  backgroundColor: "transparent",
-                  color: "var(--pdp-text-primary, #0f172a)",
-                  cursor: "pointer",
-                }}
-              >
-                امروز
-              </button>
-            )}
-            {onClear && (
-              <button
-                type="button"
-                onClick={onClear}
-                style={{
-                  padding: "3px 8px",
-                  fontSize: "11px",
-                  borderRadius: "4px",
-                  border: "1px solid var(--pdp-surface-border, #e2e8f0)",
-                  backgroundColor: "transparent",
-                  color: "var(--pdp-text-muted, #94a3b8)",
-                  cursor: "pointer",
-                }}
-              >
-                پاک کردن
-              </button>
-            )}
-          </div>
-
-          {onConfirm && (
-            <button
-              type="button"
-              onClick={onConfirm}
-              style={{
-                padding: "4px 12px",
-                fontSize: "12px",
-                fontWeight: 600,
-                borderRadius: "6px",
-                border: "none",
-                backgroundColor: "var(--pdp-primary-color, #0284c7)",
-                color: "var(--pdp-primary-contrast-text, #ffffff)",
-                cursor: "pointer",
-              }}
-            >
-              تایید
-            </button>
-          )}
-        </div>
+          پاک کردن
+        </button>
       )}
     </div>
   );

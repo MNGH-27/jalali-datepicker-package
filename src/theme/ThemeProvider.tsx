@@ -1,42 +1,64 @@
 import React, { createContext, useContext, useMemo } from "react";
-import {
-  lightThemeTokens,
-  darkThemeTokens,
-  tokensToCssVariables,
-} from "./tokens";
-import type { DatePickerThemeProviderProps, ThemeContextValue } from "./types";
+import { lightTheme, darkTheme } from "./tokens";
+import type { Theme, ThemeMode, DeepPartial } from "./types";
 
-const ThemeContext = createContext<ThemeContextValue>({
-  tokens: lightThemeTokens,
+interface ThemeContextType {
+  theme: Theme;
+  mode: ThemeMode;
+}
+
+const ThemeContext = createContext<ThemeContextType>({
+  theme: lightTheme,
   mode: "light",
 });
 
-export const DatePickerThemeProvider: React.FC<
-  DatePickerThemeProviderProps
-> = ({ mode = "light", customTokens, children }) => {
-  const tokens = useMemo(() => {
-    const base = mode === "dark" ? darkThemeTokens : lightThemeTokens;
-    return { ...base, ...customTokens };
-  }, [mode, customTokens]);
-
-  const cssVariables = useMemo(() => tokensToCssVariables(tokens), [tokens]);
-
-  return (
-    <ThemeContext.Provider value={{ tokens, mode }}>
-      <div
-        className="pdp-theme-root"
-        dir="rtl"
-        style={{
-          ...(cssVariables as React.CSSProperties),
-          display: "inline-block",
-          fontFamily: tokens.fontFamily,
-        }}
-      >
-        {children}
-      </div>
-    </ThemeContext.Provider>
-  );
+export const useTheme = (): ThemeContextType => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    return { theme: lightTheme, mode: "light" };
+  }
+  return context;
 };
 
-export const useDatePickerTheme = (): ThemeContextValue =>
-  useContext(ThemeContext);
+export interface DatePickerThemeProviderProps {
+  children: React.ReactNode;
+  mode?: ThemeMode;
+  customTheme?: DeepPartial<Theme>;
+}
+
+export const DatePickerThemeProvider: React.FC<
+  DatePickerThemeProviderProps
+> = ({ children, mode = "light", customTheme }) => {
+  const baseTheme = mode === "dark" ? darkTheme : lightTheme;
+
+  const value = useMemo<ThemeContextType>(() => {
+    if (!customTheme) {
+      return { theme: baseTheme, mode };
+    }
+
+    return {
+      mode,
+      theme: {
+        ...baseTheme,
+        ...customTheme,
+        mode,
+        colors: {
+          ...baseTheme.colors,
+          ...(customTheme.colors || {}),
+        },
+        radii: {
+          ...baseTheme.radii,
+          ...(customTheme.radii || {}),
+        },
+        shadows: {
+          ...baseTheme.shadows,
+          ...(customTheme.shadows || {}),
+        },
+      },
+    };
+  }, [baseTheme, customTheme, mode]);
+
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
+};

@@ -1,194 +1,132 @@
-import React, { useCallback } from "react";
-import type { TimePickerProps, JalaliTime } from "./types";
-import { formatTimeSegment, getCurrentTime, clampTime } from "./time-utils";
+import React from "react";
+import { useTheme } from "../../theme/ThemeProvider";
+import type { JalaliTime } from "./types";
+import type {
+  DatePickerClassNames,
+  DatePickerStyles,
+} from "../../theme/style-slots";
+
+export interface TimePickerProps {
+  value?: JalaliTime;
+  hours?: number;
+  minutes?: number;
+  seconds?: number;
+  hour?: number;
+  minute?: number;
+  second?: number;
+  minuteStep?: number;
+  hourStep?: number;
+  showSeconds?: boolean;
+  digitType?: "persian" | "latin";
+  classNames?: DatePickerClassNames;
+  styles?: DatePickerStyles;
+  onChange: (time: JalaliTime) => void;
+}
 
 export const TimePicker: React.FC<TimePickerProps> = ({
   value,
-  defaultValue,
-  onChange,
+  hours,
+  minutes,
+  seconds,
+  hour = value?.hour ?? hours ?? 0,
+  minute = value?.minute ?? minutes ?? 0,
+  second = value?.second ?? seconds ?? 0,
   minuteStep = 1,
   hourStep = 1,
   showSeconds = false,
-  digitType = "persian",
-  disabled = false,
-  styles,
-  classNames,
+  onChange,
 }) => {
-  // Internal state for uncontrolled usage
-  const [internalTime, setInternalTime] = React.useState<JalaliTime>(
-    defaultValue ?? getCurrentTime(),
-  );
+  const { theme } = useTheme();
 
-  // Active time resolution (controlled vs uncontrolled)
-  const activeTime =
-    value !== undefined ? (value ?? getCurrentTime()) : internalTime;
-
-  // Handles state updates and triggers onChange
-  const updateTime = useCallback(
-    (newTime: JalaliTime) => {
-      const clamped = clampTime(newTime);
-      if (value === undefined) {
-        setInternalTime(clamped);
-      }
-      onChange?.(clamped);
-    },
-    [value, onChange],
-  );
-
-  // Hour increment / decrement
-  const changeHour = (delta: number) => {
-    const newHour = (activeTime.hour + delta * hourStep + 24) % 24;
-    updateTime({ ...activeTime, hour: newHour });
+  const handleHourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ hour: parseInt(e.target.value, 10), minute, second });
   };
 
-  // Minute increment / decrement
-  const changeMinute = (delta: number) => {
-    const newMinute = (activeTime.minute + delta * minuteStep + 60) % 60;
-    updateTime({ ...activeTime, minute: newMinute });
+  const handleMinuteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ hour, minute: parseInt(e.target.value, 10), second });
   };
 
-  // Second increment / decrement
-  const changeSecond = (delta: number) => {
-    if (!showSeconds) return;
-    const currentSec = activeTime.second ?? 0;
-    const newSecond = (currentSec + delta + 60) % 60;
-    updateTime({ ...activeTime, second: newSecond });
+  const handleSecondChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChange({ hour, minute, second: parseInt(e.target.value, 10) });
   };
 
-  const buttonStyle: React.CSSProperties = {
-    background: "none",
-    border: "none",
-    cursor: disabled ? "not-allowed" : "pointer",
-    color: "var(--pdp-primary-color, #0284c7)",
-    fontSize: "12px",
-    padding: "2px 6px",
-    lineHeight: 1,
-  };
-
-  const segmentStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  const digitStyle: React.CSSProperties = {
-    fontSize: "15px",
+  const selectStyle: React.CSSProperties = {
+    background: theme.colors.surface,
+    color: theme.colors.textPrimary,
+    border: `1px solid ${theme.colors.border}`,
+    borderRadius: theme.radii.sm,
+    padding: "4px 6px",
+    fontSize: "0.85rem",
     fontWeight: 600,
-    color: "var(--pdp-text-primary, #0f172a)",
-    minWidth: "24px",
-    textAlign: "center",
+    outline: "none",
+    cursor: "pointer",
+    direction: "ltr",
   };
 
   return (
     <div
-      role="group"
-      aria-label="Time Selection"
-      className={classNames?.timePicker}
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         gap: "6px",
         padding: "8px 12px",
-        borderTop: "1px solid var(--pdp-surface-border, #e2e8f0)",
-        backgroundColor: "var(--pdp-header-bg, #f8fafc)",
-        borderRadius:
-          "0 0 var(--pdp-border-radius, 8px) var(--pdp-border-radius, 8px)",
-        direction: "ltr", // Preserves standard (HH:MM:SS) layout direction ,
-        ...styles?.timePicker,
+        borderTop: `1px solid ${theme.colors.border}`,
+        direction: "ltr",
       }}
     >
-      {/* Hours Column */}
-      <div style={segmentStyle}>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => changeHour(1)}
-          style={buttonStyle}
-          aria-label="Increase Hour"
-        >
-          ▼
-        </button>
-        <span style={digitStyle}>
-          {formatTimeSegment(activeTime.hour, digitType)}
-        </span>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => changeHour(-1)}
-          style={buttonStyle}
-          aria-label="Decrease Hour"
-        >
-          ▲
-        </button>
-      </div>
-
       <span
-        style={{ fontWeight: 700, color: "var(--pdp-text-secondary, #475569)" }}
+        style={{
+          fontSize: "0.8rem",
+          color: theme.colors.textSecondary,
+          marginRight: "4px",
+        }}
       >
+        زمان:
+      </span>
+
+      <select value={hour} onChange={handleHourChange} style={selectStyle}>
+        {Array.from(
+          { length: Math.ceil(24 / hourStep) },
+          (_, i) => i * hourStep,
+        ).map((h) => (
+          <option key={h} value={h}>
+            {String(h).padStart(2, "0")}
+          </option>
+        ))}
+      </select>
+
+      <span style={{ color: theme.colors.textSecondary, fontWeight: 700 }}>
         :
       </span>
 
-      {/* Minutes Column */}
-      <div style={segmentStyle}>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => changeMinute(1)}
-          style={buttonStyle}
-          aria-label="Increase Minute"
-        >
-          ▲
-        </button>
-        <span style={digitStyle}>
-          {formatTimeSegment(activeTime.minute, digitType)}
-        </span>
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={() => changeMinute(-1)}
-          style={buttonStyle}
-          aria-label="Decrease Minute"
-        >
-          ▼
-        </button>
-      </div>
+      <select value={minute} onChange={handleMinuteChange} style={selectStyle}>
+        {Array.from(
+          { length: Math.ceil(60 / minuteStep) },
+          (_, i) => i * minuteStep,
+        ).map((m) => (
+          <option key={m} value={m}>
+            {String(m).padStart(2, "0")}
+          </option>
+        ))}
+      </select>
 
-      {/* Seconds Column (Optional) */}
       {showSeconds && (
         <>
-          <span
-            style={{
-              fontWeight: 700,
-              color: "var(--pdp-text-secondary, #475569)",
-            }}
-          >
+          <span style={{ color: theme.colors.textSecondary, fontWeight: 700 }}>
             :
           </span>
-          <div style={segmentStyle}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => changeSecond(1)}
-              style={buttonStyle}
-              aria-label="Increase Second"
-            >
-              ▲
-            </button>
-            <span style={digitStyle}>
-              {formatTimeSegment(activeTime.second ?? 0, digitType)}
-            </span>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => changeSecond(-1)}
-              style={buttonStyle}
-              aria-label="Decrease Second"
-            >
-              ▼
-            </button>
-          </div>
+          <select
+            value={second}
+            onChange={handleSecondChange}
+            style={selectStyle}
+          >
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i}>
+                {String(i).padStart(2, "0")}
+              </option>
+            ))}
+          </select>
         </>
       )}
     </div>

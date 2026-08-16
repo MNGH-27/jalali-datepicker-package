@@ -33,8 +33,6 @@ import {
   formatTimeString,
   getCurrentTime,
 } from "../plugins/time-picker/time-utils";
-import { PresetsBar } from "../plugins/presets/PresetsBar";
-import type { DatePickerPreset, PresetValue } from "../plugins/presets/types";
 import { MaskedDateInput } from "./masked-input/MaskedDateInput";
 import { generateJalaliCalendarGrid } from "../core/calendar-grid";
 import {
@@ -99,11 +97,6 @@ export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   hourStep?: number;
   showSeconds?: boolean;
 
-  // میانبرها
-  enablePresets?: boolean;
-  presets?: DatePickerPreset[];
-  presetsOrientation?: "vertical" | "horizontal";
-
   // تقویم دو ماهه و اینپوت ماسک‌دار
   numberOfMonths?: 1 | 2;
   useMaskedInput?: boolean;
@@ -141,9 +134,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   minuteStep = 1,
   hourStep = 1,
   showSeconds = false,
-  enablePresets = false,
-  presets,
-  presetsOrientation = "vertical",
   numberOfMonths = 1,
   useMaskedInput = false,
   events,
@@ -334,22 +324,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     };
   }, [isModal, isOpen]);
 
-  // انتخاب میانبرها
-  const handlePresetSelect = (presetVal: PresetValue) => {
-    if (mode === "single" && !Array.isArray(presetVal)) {
-      selectDate(presetVal as JalaliDate);
-      setView(presetVal.year, presetVal.month);
-      if (variant === "popover" && !enableTime) setIsOpen(false);
-    } else if (mode === "range" && Array.isArray(presetVal)) {
-      const [start, end] = presetVal as JalaliDateRange;
-      if (start && end) {
-        selectDate(start);
-        selectDate(end);
-        setView(start.year, start.month);
-      }
-    }
-  };
-
   // محاسبات تقویم دو ماهه
   const nextMonthState = useMemo<{
     year: number;
@@ -436,15 +410,11 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     <div style={{ minWidth: "270px" }}>
       <Header
         year={y}
-        month={m}
+        monthName={PERSIAN_MONTH_NAMES[m]}
         onPrevMonth={showPrevArrow ? goToPrevMonth : () => {}}
         onNextMonth={showNextArrow ? goToNextMonth : () => {}}
-        onTogglePicker={() =>
-          numberOfMonths === 1 && setShowMonthYearPicker(true)
-        }
-        onGoToToday={goToToday}
-        classNames={classNames}
-        styles={styles}
+        onTitleClick={() => setShowMonthYearPicker((prev) => !prev)}
+        isPickerOpen={showMonthYearPicker}
       />
 
       <Weekdays
@@ -515,7 +485,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         width: "fit-content",
         userSelect: "none",
         display: "flex",
-        flexDirection: presetsOrientation === "horizontal" ? "column" : "row",
+        flexDirection: "column",
         gap: "12px",
         ...styles?.calendar,
       }}
@@ -542,26 +512,16 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         </button>
       )}
 
-      {enablePresets && (
-        <PresetsBar
-          presets={presets}
-          orientation={presetsOrientation}
-          digitType={digitType}
-          selectedValue={selected as PresetValue}
-          onSelectPreset={handlePresetSelect}
-          classNames={classNames}
-          styles={styles}
-        />
-      )}
-
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         {showMonthYearPicker ? (
           <MonthYearPicker
             currentYear={viewYear}
             currentMonth={viewMonth}
-            onSelectMonth={(m) => setView(viewYear, m)}
+            onSelectMonth={(m) => {
+              setView(viewYear, m as JalaliMonthIndex);
+              setShowMonthYearPicker(false);
+            }}
             onSelectYear={(y) => setView(y, viewMonth)}
-            onClose={() => setShowMonthYearPicker(false)}
           />
         ) : (
           <>

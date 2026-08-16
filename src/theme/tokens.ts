@@ -1,55 +1,67 @@
 import type { DatePickerTokens } from "./types";
 
-export const lightThemeTokens: DatePickerTokens = {
-  primaryColor: "#0284c7", // Sky-600
-  primaryHover: "#0369a1",
-  primaryActive: "#075985",
-  primaryContrastText: "#ffffff",
+import { Theme } from "./types";
 
-  rangeBetweenBg: "#e0f2fe", // Sky-100
-  rangeBetweenText: "#0369a1",
-
-  surfaceBg: "#ffffff",
-  surfaceBorder: "#e2e8f0",
-  headerBg: "#f8fafc",
-
-  textPrimary: "#0f172a",
-  textSecondary: "#475569",
-  textMuted: "#94a3b8",
-  textDisabled: "#cbd5e1",
-
-  todayIndicatorColor: "#0284c7",
-
-  borderRadius: "8px",
-  cellSize: "36px",
-  shadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-  fontFamily: "inherit",
+export const lightTheme: Theme = {
+  mode: "light",
+  colors: {
+    primary: "#2563eb",
+    primaryHover: "#1d4ed8",
+    primaryText: "#ffffff",
+    background: "#ffffff",
+    backgroundHover: "#f1f5f9",
+    surface: "#f8fafc",
+    border: "#e2e8f0",
+    textPrimary: "#0f172a",
+    textSecondary: "#64748b",
+    textDisabled: "#cbd5e1",
+    holiday: "#ef4444",
+    holidayBackground: "#fef2f2",
+    rangeBackground: "#dbeafe",
+    todayBorder: "#3b82f6",
+  },
+  radii: {
+    sm: "4px",
+    md: "8px",
+    lg: "12px",
+    full: "9999px",
+  },
+  shadows: {
+    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+    md: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+  },
 };
 
-export const darkThemeTokens: DatePickerTokens = {
-  primaryColor: "#38bdf8", // Sky-400
-  primaryHover: "#7dd3fc",
-  primaryActive: "#bae6fd",
-  primaryContrastText: "#0f172a",
-
-  rangeBetweenBg: "#082f49", // Sky-950
-  rangeBetweenText: "#7dd3fc",
-
-  surfaceBg: "#0f172a",
-  surfaceBorder: "#334155",
-  headerBg: "#1e293b",
-
-  textPrimary: "#f8fafc",
-  textSecondary: "#cbd5e1",
-  textMuted: "#64748b",
-  textDisabled: "#475569",
-
-  todayIndicatorColor: "#38bdf8",
-
-  borderRadius: "8px",
-  cellSize: "36px",
-  shadow: "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
-  fontFamily: "inherit",
+export const darkTheme: Theme = {
+  mode: "dark",
+  colors: {
+    primary: "#3b82f6",
+    primaryHover: "#60a5fa",
+    primaryText: "#ffffff",
+    background: "#0f172a",
+    backgroundHover: "#1e293b",
+    surface: "#1e293b",
+    border: "#334155",
+    textPrimary: "#f8fafc",
+    textSecondary: "#94a3b8",
+    textDisabled: "#475569",
+    holiday: "#f87171",
+    holidayBackground: "#451a1a",
+    rangeBackground: "#1e3a8a",
+    todayBorder: "#60a5fa",
+  },
+  radii: {
+    sm: "4px",
+    md: "8px",
+    lg: "12px",
+    full: "9999px",
+  },
+  shadows: {
+    sm: "0 1px 2px 0 rgba(0, 0, 0, 0.3)",
+    md: "0 4px 6px -1px rgba(0, 0, 0, 0.4)",
+    lg: "0 10px 15px -3px rgba(0, 0, 0, 0.5)",
+  },
 };
 
 /**

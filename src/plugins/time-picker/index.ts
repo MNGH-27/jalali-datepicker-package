@@ -1,3 +1,3 @@
-export * from "./types";
+export { TimePicker } from "./TimePicker";
 export * from "./time-utils";
-export * from "./TimePicker";
+export * from "./types";

@@ -36,7 +36,6 @@ export * from "./components/masked-input";
 
 // --- Plugins ---
 export * from "./plugins/time-picker";
-export * from "./plugins/presets";
 
 // --- Events ---
 export * from "./events";
