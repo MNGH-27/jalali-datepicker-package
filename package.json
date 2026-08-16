@@ -1,11 +1,25 @@
 {
   "name": "@mngh/jalali-datepicker",
   "version": "1.0.0",
-  "description": "Modern, accessible, and lightweight Jalali (Persian/Shamsi) Date & Time Picker for React.",
+  "description": "A modern, zero-dependency, lightweight, accessible, and highly customizable Jalali (Persian/Shamsi) Date & Time Picker for React.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "author": {
+    "name": "mohsen nourti",
+    "url": "https://github.com/MNGH-27"
+  },
+  "contributors": [
+    {
+      "name": "mngh",
+      "url": "https://github.com/MNGH-27"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MNGH-27/jalali-datepicker-package"
+  },
   "files": [
     "dist"
   ],
@@ -22,12 +36,20 @@
     "jalali-calendar",
     "persian-datepicker",
     "shamsi-datepicker",
+    "persian-calendar",
     "react-datepicker",
     "react-jalali",
+    "react-jalali-datepicker",
     "timepicker",
-    "date-range-picker"
+    "date-range-picker",
+    "shamsi",
+    "تقویم-شمسی",
+    "تقویم-جلالی"
   ],
-  "author": "Your Name <your.email@example.com>",
+  "homepage": "https://github.com/MNGH-27/jalali-datepicker-package#readme",
+  "bugs": {
+    "url": "https://github.com/MNGH-27/jalali-datepicker-package/issues"
+  },
   "license": "MIT",
   "peerDependencies": {
     "react": ">=18.0.0",
