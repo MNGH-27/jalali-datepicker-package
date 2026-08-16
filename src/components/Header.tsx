@@ -1,3 +1,4 @@
+// src/components/Header.tsx
 import React from "react";
 import { useTheme } from "../theme/ThemeProvider";
 import { toPersianDigits } from "../formatters/persian-digits";
@@ -21,45 +22,39 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { theme } = useTheme();
 
-  const arrowButtonStyle: React.CSSProperties = {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "6px",
-    borderRadius: theme.radii.md,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: theme.colors.textPrimary,
-    transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
-  };
-
   return (
     <div
       style={{
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "8px 12px",
+        padding: "10px 14px",
         borderBottom: `1px solid ${theme.colors.border}`,
         userSelect: "none",
-        height: "42px",
-        boxSizing: "border-box",
       }}
     >
-      {/* در محیط RTL: فلش راست برای ماه قبل */}
+      {/* دکمه ماه قبل */}
       <button
         type="button"
         onClick={onPrevMonth}
         aria-label="ماه قبل"
-        style={arrowButtonStyle}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "6px",
+          borderRadius: theme.radii.md,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: theme.colors.textPrimary,
+          transition: "all 0.15s ease",
+        }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = theme.colors.backgroundHover;
-          e.currentTarget.style.transform = "scale(1.1)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = "transparent";
-          e.currentTarget.style.transform = "scale(1)";
         }}
       >
         <svg
@@ -68,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >
@@ -76,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({
         </svg>
       </button>
 
-      {/* دکمه باز/بسته کردن انتخابگر ماه و سال */}
+      {/* عنوان ماه و سال */}
       <button
         type="button"
         onClick={onTitleClick}
@@ -86,9 +81,9 @@ export const Header: React.FC<HeaderProps> = ({
             : "transparent",
           border: "none",
           cursor: "pointer",
-          padding: "6px 10px",
+          padding: "6px 12px",
           borderRadius: theme.radii.md,
-          fontSize: "0.9rem",
+          fontSize: "0.95rem",
           fontWeight: 700,
           color: theme.colors.textPrimary,
           display: "flex",
@@ -113,31 +108,40 @@ export const Header: React.FC<HeaderProps> = ({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{
             transform: isPickerOpen ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+            transition: "transform 0.2s ease",
           }}
         >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
 
-      {/* در محیط RTL: فلش چپ برای ماه بعد */}
+      {/* دکمه ماه بعد */}
       <button
         type="button"
         onClick={onNextMonth}
         aria-label="ماه بعد"
-        style={arrowButtonStyle}
+        style={{
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          padding: "6px",
+          borderRadius: theme.radii.md,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: theme.colors.textPrimary,
+          transition: "all 0.15s ease",
+        }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = theme.colors.backgroundHover;
-          e.currentTarget.style.transform = "scale(1.1)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = "transparent";
-          e.currentTarget.style.transform = "scale(1)";
         }}
       >
         <svg
@@ -146,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="2.2"
+          strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
         >

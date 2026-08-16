@@ -3,20 +3,9 @@ import React from "react";
 import { useTheme } from "../theme/ThemeProvider";
 import { toPersianDigits } from "../formatters/persian-digits";
 import type { JalaliDate, JalaliCalendarCell } from "../core/types";
-import type { CalendarEvent } from "../events/types";
-import type {
-  DatePickerClassNames,
-  DatePickerStyles,
-} from "../theme/style-slots";
 
 export interface DayCellProps {
-  cell?:
-    | JalaliCalendarCell
-    | (Partial<JalaliCalendarCell> & {
-        day?: number;
-        isHoliday?: boolean;
-        isDisabled?: boolean;
-      });
+  cell?: JalaliCalendarCell | any;
   day?: number;
   isCurrentMonth?: boolean;
   isSelected?: boolean;
@@ -27,15 +16,12 @@ export interface DayCellProps {
   isRangeEnd?: boolean;
   disabled?: boolean;
   digitType?: "persian" | "latin";
-  holidayTitle?: string;
-  events?: CalendarEvent[];
   tabIndex?: number;
-  classNames?: DatePickerClassNames;
-  styles?: DatePickerStyles;
   onSelect?: (target: JalaliDate) => void;
   onHover?: (target: JalaliDate | null) => void;
   onFocus?: (target: JalaliDate) => void;
   onClick?: () => void;
+  [key: string]: any;
 }
 
 export const DayCell: React.FC<DayCellProps> = (props) => {
@@ -45,22 +31,20 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
   const jalaliDate: JalaliDate = cell?.jalali ?? {
     year: 1403,
     month: 1,
-    day: props.day ?? (cell && "day" in cell ? (cell as any).day : 1),
+    day: props.day ?? (cell && "day" in cell ? cell.day : 1),
   };
 
   const dayNumber = jalaliDate.day;
   const isCurrentMonth = cell?.isCurrentMonth ?? props.isCurrentMonth ?? true;
   const isSelected = cell?.isSelected ?? props.isSelected ?? false;
   const isToday = cell?.isToday ?? props.isToday ?? false;
-  const isHoliday =
-    props.isHoliday ??
-    (cell && "isHoliday" in cell ? (cell as any).isHoliday : false);
+  const isHoliday = props.isHoliday ?? cell?.isHoliday ?? false;
   const isInRange = cell?.isInRange ?? props.isInRange ?? false;
   const isRangeStart = cell?.isRangeStart ?? props.isRangeStart ?? false;
   const isRangeEnd = cell?.isRangeEnd ?? props.isRangeEnd ?? false;
   const disabled = cell?.isDisabled ?? props.disabled ?? false;
 
-  // مدیریت رنگ
+  // مدیریت رنگ متن و پس‌زمینه
   let backgroundColor = "transparent";
   let textColor = isCurrentMonth
     ? theme.colors.textPrimary
@@ -78,7 +62,6 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
     textColor = theme.colors.holiday;
   }
 
-  // مدیریت دقیق گوشه‌ها بر اساس وضعیت بازه
   let borderRadius = theme.radii.md;
   if (isRangeStart) {
     borderRadius = `${theme.radii.md} 0 0 ${theme.radii.md}`;
@@ -102,8 +85,8 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
       onClick={handleClick}
       onFocus={() => props.onFocus?.(jalaliDate)}
       style={{
-        width: "36px",
-        height: "36px",
+        width: "38px",
+        height: "38px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -115,13 +98,12 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
         backgroundColor,
         color: textColor,
         cursor: disabled || !isCurrentMonth ? "default" : "pointer",
-        fontSize: "0.875rem",
+        fontSize: "0.9rem",
         fontWeight:
           isSelected || isToday || isRangeStart || isRangeEnd ? 700 : 500,
-        transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
-        opacity: !isCurrentMonth ? 0.3 : 1,
+        transition: "all 0.15s ease",
+        opacity: !isCurrentMonth ? 0.35 : 1,
         outline: "none",
-        ...props.styles?.dayCell,
       }}
       onMouseEnter={(e) => {
         props.onHover?.(jalaliDate);

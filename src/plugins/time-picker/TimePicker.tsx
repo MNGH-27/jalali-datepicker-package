@@ -1,26 +1,18 @@
+// src/plugins/time-picker/TimePicker.tsx
 import React from "react";
 import { useTheme } from "../../theme/ThemeProvider";
 import type { JalaliTime } from "./types";
-import type {
-  DatePickerClassNames,
-  DatePickerStyles,
-} from "../../theme/style-slots";
 
 export interface TimePickerProps {
   value?: JalaliTime;
   hours?: number;
   minutes?: number;
   seconds?: number;
-  hour?: number;
-  minute?: number;
-  second?: number;
   minuteStep?: number;
   hourStep?: number;
   showSeconds?: boolean;
-  digitType?: "persian" | "latin";
-  classNames?: DatePickerClassNames;
-  styles?: DatePickerStyles;
   onChange: (time: JalaliTime) => void;
+  [key: string]: any;
 }
 
 export const TimePicker: React.FC<TimePickerProps> = ({
@@ -28,15 +20,16 @@ export const TimePicker: React.FC<TimePickerProps> = ({
   hours,
   minutes,
   seconds,
-  hour = value?.hour ?? hours ?? 0,
-  minute = value?.minute ?? minutes ?? 0,
-  second = value?.second ?? seconds ?? 0,
   minuteStep = 1,
   hourStep = 1,
   showSeconds = false,
   onChange,
 }) => {
   const { theme } = useTheme();
+
+  const hour = value?.hour ?? hours ?? 0;
+  const minute = value?.minute ?? minutes ?? 0;
+  const second = value?.second ?? seconds ?? 0;
 
   const handleHourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChange({ hour: parseInt(e.target.value, 10), minute, second });
@@ -55,7 +48,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
     color: theme.colors.textPrimary,
     border: `1px solid ${theme.colors.border}`,
     borderRadius: theme.radii.sm,
-    padding: "4px 6px",
+    padding: "6px 8px",
     fontSize: "0.85rem",
     fontWeight: 600,
     outline: "none",
@@ -69,15 +62,16 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        gap: "6px",
-        padding: "8px 12px",
+        gap: "8px",
+        padding: "12px 14px",
         borderTop: `1px solid ${theme.colors.border}`,
         direction: "ltr",
+        color: theme.colors.textPrimary,
       }}
     >
       <span
         style={{
-          fontSize: "0.8rem",
+          fontSize: "0.85rem",
           color: theme.colors.textSecondary,
           marginRight: "4px",
         }}
@@ -90,7 +84,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
           { length: Math.ceil(24 / hourStep) },
           (_, i) => i * hourStep,
         ).map((h) => (
-          <option key={h} value={h}>
+          <option
+            key={h}
+            value={h}
+            style={{
+              background: theme.colors.background,
+              color: theme.colors.textPrimary,
+            }}
+          >
             {String(h).padStart(2, "0")}
           </option>
         ))}
@@ -105,7 +106,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
           { length: Math.ceil(60 / minuteStep) },
           (_, i) => i * minuteStep,
         ).map((m) => (
-          <option key={m} value={m}>
+          <option
+            key={m}
+            value={m}
+            style={{
+              background: theme.colors.background,
+              color: theme.colors.textPrimary,
+            }}
+          >
             {String(m).padStart(2, "0")}
           </option>
         ))}
@@ -122,7 +130,14 @@ export const TimePicker: React.FC<TimePickerProps> = ({
             style={selectStyle}
           >
             {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>
+              <option
+                key={i}
+                value={i}
+                style={{
+                  background: theme.colors.background,
+                  color: theme.colors.textPrimary,
+                }}
+              >
                 {String(i).padStart(2, "0")}
               </option>
             ))}
