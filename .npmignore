@@ -1,0 +1,8 @@
+src/
+__tests__/
+.storybook/
+vite.config.ts
+vitest.config.ts
+tsconfig*.json
+*.tgz
+.github/
