@@ -4,16 +4,7 @@ import {
   DatePickerThemeProvider,
   type DateRange,
 } from "@mngh/jalali-datepicker";
-import {
-  Copy,
-  Check,
-  Moon,
-  Sun,
-  Calendar,
-  Clock,
-  Layers,
-  Sparkles,
-} from "lucide-react";
+import { Copy, Check, Moon, Sun, Calendar, Layers } from "lucide-react";
 
 export default function App() {
   const [themeMode, setThemeMode] = useState<"light" | "dark">("dark");
@@ -428,7 +419,6 @@ export function Example() {
                     variant={variant}
                     value={rangeDate}
                     onChange={setRangeDate}
-                    enablePresets={true}
                     showHolidays={showHolidays}
                     showFooter={showFooter}
                     numberOfMonths={numberOfMonths}
