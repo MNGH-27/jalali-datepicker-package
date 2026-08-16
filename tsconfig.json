@@ -17,5 +17,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src", "vite.config.ts"],
-  "exclude": ["node_modules", "dist", "storybook-static", "src/stories"]
+  "exclude": ["node_modules", "dist"]
 }

@@ -57,8 +57,7 @@
   },
   "scripts": {
     "build": "vite build",
-    "test": "vitest --config vitest.unit.config.ts",
-    "storybook": "storybook dev -p 6006"
+    "test": "vitest --config vitest.unit.config.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
