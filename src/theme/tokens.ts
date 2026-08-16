@@ -4,20 +4,35 @@ import { Theme } from "./types";
 export const lightTheme: Theme = {
   mode: "light",
   colors: {
-    primary: "#4f46e5", // Indigo-600 مدرن و خوانا
-    primaryHover: "#4338ca", // Indigo-700
-    primaryText: "#ffffff",
-    background: "#ffffff",
-    backgroundHover: "#f8fafc", // Slate-50 نرم
-    surface: "#f1f5f9", // Slate-100
-    border: "#e2e8f0", // Slate-200
-    textPrimary: "#0f172a", // Slate-900
-    textSecondary: "#64748b", // Slate-500
-    textDisabled: "#cbd5e1", // Slate-300
-    holiday: "#e11d48", // Rose-600
-    holidayBackground: "#fff1f2", // Rose-50
-    rangeBackground: "#e0e7ff", // Indigo-100
-    todayBorder: "#4f46e5",
+    // Primary
+    primary: "#4F46E5", // Indigo 600
+    primaryHover: "#4338CA", // Indigo 700
+    primaryText: "#FFFFFF",
+
+    // Background
+    background: "#FFFFFF",
+    backgroundHover: "#F8FAFC", // Slate 50
+
+    // Surface
+    surface: "#F1F5F9", // Slate 100
+
+    // Border
+    border: "#CBD5E1", // Slate 300
+
+    // Text
+    textPrimary: "#0F172A", // Slate 900
+    textSecondary: "#475569", // Slate 600
+    textDisabled: "#94A3B8", // Slate 400
+
+    // Holiday
+    holiday: "#E11D48", // Rose 600
+    holidayBackground: "#FFF1F2", // Rose 50
+
+    // Selected range
+    rangeBackground: "#E0E7FF", // Indigo 100
+
+    // Today
+    todayBorder: "#4F46E5", // Indigo 600
   },
   radii: {
     sm: "6px",
@@ -35,20 +50,35 @@ export const lightTheme: Theme = {
 export const darkTheme: Theme = {
   mode: "dark",
   colors: {
-    primary: "#6366f1", // Indigo-500
-    primaryHover: "#4f46e5",
-    primaryText: "#ffffff",
-    background: "#0f172a", // Slate-900
-    backgroundHover: "#1e293b", // Slate-800
-    surface: "#1e293b",
-    border: "#334155", // Slate-700
-    textPrimary: "#f8fafc",
-    textSecondary: "#94a3b8",
-    textDisabled: "#475569",
-    holiday: "#fb7185", // Rose-400
-    holidayBackground: "#4c0519", // Rose-950
-    rangeBackground: "#312e81", // Indigo-900
-    todayBorder: "#818cf8",
+    // Primary
+    primary: "#818CF8", // Indigo 400
+    primaryHover: "#A5B4FC", // Indigo 300
+    primaryText: "#0F172A",
+
+    // Background
+    background: "#0F172A", // Slate 900
+    backgroundHover: "#1E293B", // Slate 800
+
+    // Surface
+    surface: "#1E293B", // Slate 800
+
+    // Border
+    border: "#475569", // Slate 600
+
+    // Text
+    textPrimary: "#F8FAFC", // Slate 50
+    textSecondary: "#CBD5E1", // Slate 300
+    textDisabled: "#64748B", // Slate 500
+
+    // Holiday
+    holiday: "#FB7185", // Rose 400
+    holidayBackground: "#3F1D2E",
+
+    // Selected range
+    rangeBackground: "#3730A3", // Indigo 700
+
+    // Today
+    todayBorder: "#A5B4FC", // Indigo 300
   },
   radii: {
     sm: "6px",
