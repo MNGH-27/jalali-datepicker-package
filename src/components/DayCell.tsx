@@ -1,3 +1,4 @@
+// src/components/DayCell.tsx
 import React from "react";
 import { useTheme } from "../theme/ThemeProvider";
 import { toPersianDigits } from "../formatters/persian-digits";
@@ -59,6 +60,7 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
   const isRangeEnd = cell?.isRangeEnd ?? props.isRangeEnd ?? false;
   const disabled = cell?.isDisabled ?? props.disabled ?? false;
 
+  // مدیریت رنگ
   let backgroundColor = "transparent";
   let textColor = isCurrentMonth
     ? theme.colors.textPrimary
@@ -66,6 +68,7 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
 
   if (isInRange && isCurrentMonth) {
     backgroundColor = theme.colors.rangeBackground;
+    textColor = theme.colors.primary;
   }
 
   if (isSelected || isRangeStart || isRangeEnd) {
@@ -73,6 +76,16 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
     textColor = theme.colors.primaryText;
   } else if (isHoliday && isCurrentMonth) {
     textColor = theme.colors.holiday;
+  }
+
+  // مدیریت دقیق گوشه‌ها بر اساس وضعیت بازه
+  let borderRadius = theme.radii.md;
+  if (isRangeStart) {
+    borderRadius = `${theme.radii.md} 0 0 ${theme.radii.md}`;
+  } else if (isRangeEnd) {
+    borderRadius = `0 ${theme.radii.md} ${theme.radii.md} 0`;
+  } else if (isInRange) {
+    borderRadius = "0px";
   }
 
   const handleClick = () => {
@@ -98,17 +111,13 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
           isToday && !isSelected && !isRangeStart && !isRangeEnd
             ? `1.5px solid ${theme.colors.todayBorder}`
             : "none",
-        borderRadius:
-          isRangeStart || isRangeEnd || isSelected
-            ? theme.radii.md
-            : isInRange
-              ? "0px"
-              : theme.radii.md,
+        borderRadius,
         backgroundColor,
         color: textColor,
         cursor: disabled || !isCurrentMonth ? "default" : "pointer",
-        fontSize: "0.85rem",
-        fontWeight: isSelected || isToday ? 700 : 500,
+        fontSize: "0.875rem",
+        fontWeight:
+          isSelected || isToday || isRangeStart || isRangeEnd ? 700 : 500,
         transition: "all 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
         opacity: !isCurrentMonth ? 0.3 : 1,
         outline: "none",
