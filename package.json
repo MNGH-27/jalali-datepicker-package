@@ -7,7 +7,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "author": {
-    "name": "mohsen nourti",
+    "name": "mohsen nouri",
     "url": "https://github.com/MNGH-27"
   },
   "contributors": [
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/MNGH-27/jalali-datepicker-package"
+    "url": "git+https://github.com/MNGH-27/jalali-datepicker-package.git"
   },
   "files": [
     "dist"
@@ -58,6 +58,9 @@
   "scripts": {
     "build": "vite build",
     "test": "vitest --config vitest.unit.config.ts"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
