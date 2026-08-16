@@ -1,14 +1,34 @@
 import type {
   JalaliDate,
   JalaliMonthIndex,
-  JalaliDayOfWeek,
   JalaliCalendarCell,
 } from "../core/types";
+
+export type InternalSelectedValue<M extends SelectionMode = "single"> =
+  M extends "single"
+    ? JalaliDate | null
+    : M extends "range"
+      ? JalaliDateRange
+      : JalaliDate[];
+
+export interface UseJalaliDatePickerOptions<
+  M extends SelectionMode = "single",
+> {
+  mode?: M;
+  value?: InternalSelectedValue<M>;
+  defaultValue?: InternalSelectedValue<M>;
+  onChange?: (value: InternalSelectedValue<M>) => void;
+  minDate?: JalaliDate;
+  maxDate?: JalaliDate;
+  isDateDisabled?: (date: JalaliDate) => boolean;
+  firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+}
 
 /** Supported selection modes */
 export type SelectionMode = "single" | "range" | "multiple";
 
 /** Date range tuple representation */
+export type DateRange = [Date | null, Date | null];
 export type JalaliDateRange = [JalaliDate | null, JalaliDate | null];
 
 /** Selection value types discriminated by mode */
@@ -20,31 +40,8 @@ export type DatePickerValue<M extends SelectionMode> = M extends "single"
       ? JalaliDate[]
       : never;
 
-/**
- * Configuration options for `useJalaliDatePicker`
- */
-export interface UseJalaliDatePickerOptions<
-  M extends SelectionMode = "single",
-> {
-  /** Mode of selection: 'single' (default), 'range', or 'multiple' */
-  mode?: M;
-  /** Controlled value */
-  value?: DatePickerValue<M>;
-  /** Default uncontrolled value */
-  defaultValue?: DatePickerValue<M>;
-  /** Callback fired when selection changes */
-  onChange?: (value: DatePickerValue<M>) => void;
-  /** Initial view month and year (defaults to selected date or current date) */
-  initialViewDate?: { year: number; month: JalaliMonthIndex };
-  /** First day of week (0 = Saturday/شنبه, 1 = Sunday/یکشنبه, etc.) */
-  firstDayOfWeek?: JalaliDayOfWeek;
-  /** Minimum selectable date (inclusive) */
-  minDate?: Date | JalaliDate;
-  /** Maximum selectable date (inclusive) */
-  maxDate?: Date | JalaliDate;
-  /** Custom function to determine if a specific date should be disabled */
-  isDateDisabled?: (jalali: JalaliDate, gregorian: Date) => boolean;
-}
+export type SelectedDateValue<M extends SelectionMode = "single"> =
+  M extends "single" ? Date | null : M extends "range" ? DateRange : Date[];
 
 /**
  * Return type of `useJalaliDatePicker`

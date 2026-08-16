@@ -5,6 +5,21 @@ import {
   getDaysInJalaliMonth,
 } from "./jalali-math";
 
+export function jsDateToJalali(d: Date): JalaliDate {
+  return gregorianToJalali(d.getFullYear(), d.getMonth() + 1, d.getDate());
+}
+
+export function jalaliToJsDate(
+  j: JalaliDate,
+  hours = 0,
+  minutes = 0,
+  seconds = 0,
+): Date {
+  const g = jalaliToGregorian(j.year, j.month, j.day);
+  g.setHours(hours, minutes, seconds, 0);
+  return g;
+}
+
 /**
  * Calculates day of week in Jalali calendar (0 = شنبه, ..., 6 = جمعه).
  */
