@@ -17,13 +17,13 @@ export interface UseJalaliDatePickerOptions<
   mode?: M;
   value?: InternalSelectedValue<M>;
   defaultValue?: InternalSelectedValue<M>;
+  initialViewDate?: JalaliDate;
   onChange?: (value: InternalSelectedValue<M>) => void;
   minDate?: JalaliDate;
   maxDate?: JalaliDate;
   isDateDisabled?: (date: JalaliDate) => boolean;
   firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 }
-
 /** Supported selection modes */
 export type SelectionMode = "single" | "range" | "multiple";
 

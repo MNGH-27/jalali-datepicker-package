@@ -1,241 +1,222 @@
-import { useState, useMemo, useCallback } from "react";
-import type {
-  JalaliDate,
-  JalaliMonthIndex,
-  JalaliCalendarCell,
-} from "../core/types";
+import { useState, useCallback, useMemo } from "react";
 import type {
   UseJalaliDatePickerOptions,
-  UseJalaliDatePickerReturn,
   SelectionMode,
-  DatePickerValue,
+  InternalSelectedValue,
   JalaliDateRange,
 } from "./types";
+import type { JalaliDate, JalaliMonthIndex } from "../core/types";
 import { getTodayJalali, isSameJalaliDay } from "../core/jalali-math";
 import { generateJalaliCalendarGrid } from "../core/calendar-grid";
-import {
-  compareJalaliDates,
-  isJalaliDateBetween,
-} from "../core/jalali-helpers";
+import { isJalaliDateBetween } from "../core/jalali-helpers";
 
 export function useJalaliDatePicker<M extends SelectionMode = "single">(
   options: UseJalaliDatePickerOptions<M> = {},
-): UseJalaliDatePickerReturn<M> {
+) {
   const {
     mode = "single" as M,
     value: controlledValue,
     defaultValue,
-    onChange,
     initialViewDate,
-    firstDayOfWeek = 0,
+    onChange,
     minDate,
     maxDate,
     isDateDisabled,
+    firstDayOfWeek = 0,
   } = options;
 
-  // 1. Selection State (Controlled vs Uncontrolled)
-  const [internalValue, setInternalValue] = useState<DatePickerValue<M>>(() => {
-    if (defaultValue !== undefined) return defaultValue;
-    if (mode === "single") return null as DatePickerValue<M>;
-    if (mode === "range") return [null, null] as DatePickerValue<M>;
-    return [] as unknown as DatePickerValue<M>;
+  const today = useMemo(() => getTodayJalali(), []);
+
+  const [internalValue, setInternalValue] = useState<InternalSelectedValue<M>>(
+    () => {
+      if (defaultValue !== undefined) return defaultValue;
+      if (mode === "single") return null as InternalSelectedValue<M>;
+      if (mode === "range")
+        return [null, null] as unknown as InternalSelectedValue<M>;
+      return [] as unknown as InternalSelectedValue<M>;
+    },
+  );
+
+  const selected =
+    controlledValue !== undefined ? controlledValue : internalValue;
+
+  const [viewYear, setViewYear] = useState<number>(() => {
+    if (initialViewDate) return initialViewDate.year;
+    if (defaultValue && !Array.isArray(defaultValue))
+      return (defaultValue as JalaliDate).year;
+    return today.year;
   });
 
-  const selected = (
-    controlledValue !== undefined ? controlledValue : internalValue
-  ) as DatePickerValue<M>;
+  const [viewMonth, setViewMonth] = useState<JalaliMonthIndex>(() => {
+    if (initialViewDate) return initialViewDate.month;
+    if (defaultValue && !Array.isArray(defaultValue))
+      return (defaultValue as JalaliDate).month;
+    return today.month;
+  });
 
-  // 2. Range Hover State (for dynamic preview)
   const [hoverDate, setHoverDate] = useState<JalaliDate | null>(null);
 
-  // 3. Active View (Month & Year)
-  const today = useMemo(() => getTodayJalali(), []);
-  const [viewState, setViewState] = useState<{
-    year: number;
-    month: JalaliMonthIndex;
-  }>(() => {
-    if (initialViewDate) return initialViewDate;
-    if (mode === "single" && selected)
-      return {
-        year: (selected as JalaliDate).year,
-        month: (selected as JalaliDate).month,
-      };
-    if (mode === "range" && (selected as JalaliDateRange)?.[0]) {
-      const start = (selected as JalaliDateRange)[0]!;
-      return { year: start.year, month: start.month };
-    }
-    return { year: today.year, month: today.month };
-  });
-
-  // 4. View Navigation
-  const goToNextMonth = useCallback(() => {
-    setViewState((prev) => {
-      if (prev.month === 11) {
-        return { year: prev.year + 1, month: 0 };
-      }
-      return { year: prev.year, month: (prev.month + 1) as JalaliMonthIndex };
-    });
+  const setView = useCallback((year: number, month: JalaliMonthIndex) => {
+    setViewYear(year);
+    setViewMonth(month);
   }, []);
 
   const goToPrevMonth = useCallback(() => {
-    setViewState((prev) => {
-      if (prev.month === 0) {
-        return { year: prev.year - 1, month: 11 };
-      }
-      return { year: prev.year, month: (prev.month - 1) as JalaliMonthIndex };
-    });
-  }, []);
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth((m) => (m - 1) as JalaliMonthIndex);
+    }
+  }, [viewMonth]);
 
-  const setView = useCallback((year: number, month: JalaliMonthIndex) => {
-    setViewState({ year, month });
-  }, []);
+  const goToNextMonth = useCallback(() => {
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth((m) => (m + 1) as JalaliMonthIndex);
+    }
+  }, [viewMonth]);
 
   const goToToday = useCallback(() => {
-    setViewState({ year: today.year, month: today.month });
-  }, [today]);
-
-  // 5. Selection Checks
-  const isDateSelected = useCallback(
-    (target: JalaliDate): boolean => {
-      if (mode === "single") {
-        return isSameJalaliDay(selected as JalaliDate | null, target);
-      }
-      if (mode === "range") {
-        const [start, end] = (selected as JalaliDateRange) || [null, null];
-        return isSameJalaliDay(start, target) || isSameJalaliDay(end, target);
-      }
-      if (mode === "multiple") {
-        const list = (selected as JalaliDate[]) || [];
-        return list.some((d) => isSameJalaliDay(d, target));
-      }
-      return false;
-    },
-    [mode, selected],
-  );
-
-  // 6. Selection Handler
-  const updateSelection = useCallback(
-    (newValue: DatePickerValue<M>) => {
-      if (controlledValue === undefined) {
-        setInternalValue(newValue);
-      }
-      onChange?.(newValue);
-    },
-    [controlledValue, onChange],
-  );
+    const t = getTodayJalali();
+    setViewYear(t.year);
+    setViewMonth(t.month);
+  }, []);
 
   const selectDate = useCallback(
-    (target: JalaliDate) => {
-      if (mode === "single") {
-        updateSelection(target as DatePickerValue<M>);
-      } else if (mode === "multiple") {
-        const currentList = (selected as JalaliDate[]) || [];
-        const exists = currentList.some((d) => isSameJalaliDay(d, target));
-        const updated = exists
-          ? currentList.filter((d) => !isSameJalaliDay(d, target))
-          : [...currentList, target].sort(compareJalaliDates);
-        updateSelection(updated as unknown as DatePickerValue<M>);
-      } else if (mode === "range") {
-        const [start, end] = (selected as JalaliDateRange) || [null, null];
+    (date: JalaliDate) => {
+      let nextValue: InternalSelectedValue<M>;
 
-        // Step 1: Start fresh range
+      if (mode === "single") {
+        nextValue = date as InternalSelectedValue<M>;
+      } else if (mode === "range") {
+        const currentRange = (selected as JalaliDateRange) || [null, null];
+        const [start, end] = currentRange;
+
         if (!start || (start && end)) {
-          updateSelection([target, null] as unknown as DatePickerValue<M>);
-        }
-        // Step 2: Complete existing range
-        else {
-          if (compareJalaliDates(target, start) < 0) {
-            // Target is earlier than start: make target the start date
-            updateSelection([target, start] as unknown as DatePickerValue<M>);
+          nextValue = [date, null] as unknown as InternalSelectedValue<M>;
+        } else {
+          if (
+            date.year < start.year ||
+            (date.year === start.year && date.month < start.month) ||
+            (date.year === start.year &&
+              date.month === start.month &&
+              date.day < start.day)
+          ) {
+            nextValue = [date, start] as unknown as InternalSelectedValue<M>;
           } else {
-            updateSelection([start, target] as unknown as DatePickerValue<M>);
+            nextValue = [start, date] as unknown as InternalSelectedValue<M>;
           }
-          setHoverDate(null);
+        }
+      } else {
+        const currentList = (selected as JalaliDate[]) || [];
+        const exists = currentList.some((d) => isSameJalaliDay(d, date));
+        if (exists) {
+          nextValue = currentList.filter(
+            (d) => !isSameJalaliDay(d, date),
+          ) as InternalSelectedValue<M>;
+        } else {
+          nextValue = [...currentList, date] as InternalSelectedValue<M>;
         }
       }
+
+      if (controlledValue === undefined) {
+        setInternalValue(nextValue);
+      }
+      onChange?.(nextValue);
     },
-    [mode, selected, updateSelection],
+    [mode, selected, controlledValue, onChange],
   );
 
   const clear = useCallback(() => {
-    if (mode === "single") updateSelection(null as DatePickerValue<M>);
-    else if (mode === "range")
-      updateSelection([null, null] as unknown as DatePickerValue<M>);
-    else updateSelection([] as unknown as DatePickerValue<M>);
-  }, [mode, updateSelection]);
+    const emptyValue = (
+      mode === "single" ? null : mode === "range" ? [null, null] : []
+    ) as InternalSelectedValue<M>;
 
-  // 7. Month Grid Construction with Range & Multiple Metadata
-  const rawGrid = useMemo(() => {
-    return generateJalaliCalendarGrid({
-      year: viewState.year,
-      month: viewState.month,
+    if (controlledValue === undefined) {
+      setInternalValue(emptyValue);
+    }
+    onChange?.(emptyValue);
+  }, [mode, controlledValue, onChange]);
+
+  const grid = useMemo(() => {
+    const rawGrid = generateJalaliCalendarGrid({
+      year: viewYear,
+      month: viewMonth,
       firstDayOfWeek,
       minDate,
       maxDate,
       isDateDisabled,
     });
+
+    if (mode === "single") {
+      const singleSelected = selected as JalaliDate | null;
+      return rawGrid.map((cell) => ({
+        ...cell,
+        isSelected: singleSelected
+          ? isSameJalaliDay(cell.jalali, singleSelected)
+          : false,
+      }));
+    }
+
+    if (mode === "range") {
+      const [start, end] = (selected as JalaliDateRange) || [null, null];
+      const effectiveEnd = end ?? (start && hoverDate ? hoverDate : null);
+
+      return rawGrid.map((cell) => {
+        const isStart = start ? isSameJalaliDay(cell.jalali, start) : false;
+        const isEnd = effectiveEnd
+          ? isSameJalaliDay(cell.jalali, effectiveEnd)
+          : false;
+        let inRange = false;
+        if (start && effectiveEnd) {
+          inRange = isJalaliDateBetween(cell.jalali, start, effectiveEnd);
+        }
+        return {
+          ...cell,
+          isSelected: isStart || isEnd,
+          isInRange: inRange,
+          isRangeStart: isStart,
+          isRangeEnd: isEnd,
+        };
+      });
+    }
+
+    if (mode === "multiple") {
+      const list = (selected as JalaliDate[]) || [];
+      return rawGrid.map((cell) => ({
+        ...cell,
+        isSelected: list.some((d) => isSameJalaliDay(d, cell.jalali)),
+      }));
+    }
+
+    return rawGrid;
   }, [
-    viewState.year,
-    viewState.month,
+    viewYear,
+    viewMonth,
     firstDayOfWeek,
     minDate,
     maxDate,
     isDateDisabled,
+    mode,
+    selected,
+    hoverDate,
   ]);
-
-  // Enrich cells with active selection/range flags
-  const grid = useMemo((): JalaliCalendarCell[] => {
-    const rangeStart =
-      mode === "range" ? (selected as JalaliDateRange)?.[0] : null;
-    const rangeEnd =
-      mode === "range" ? (selected as JalaliDateRange)?.[1] : null;
-    const effectiveEnd =
-      rangeEnd ?? (rangeStart && hoverDate ? hoverDate : null);
-
-    return rawGrid.map((cell) => {
-      const isSelected = isDateSelected(cell.jalali);
-      let isInRange = false;
-      let isRangeStart = false;
-      let isRangeEnd = false;
-
-      if (mode === "range" && rangeStart) {
-        isRangeStart = isSameJalaliDay(cell.jalali, rangeStart);
-        isRangeEnd = effectiveEnd
-          ? isSameJalaliDay(cell.jalali, effectiveEnd)
-          : false;
-
-        if (effectiveEnd) {
-          isInRange = isJalaliDateBetween(
-            cell.jalali,
-            rangeStart,
-            effectiveEnd,
-          );
-        }
-      }
-
-      return {
-        ...cell,
-        isSelected,
-        isInRange,
-        isRangeStart,
-        isRangeEnd,
-      };
-    });
-  }, [rawGrid, mode, selected, hoverDate, isDateSelected]);
 
   return {
     selected,
-    viewYear: viewState.year,
-    viewMonth: viewState.month,
+    viewYear,
+    viewMonth,
     grid,
     goToPrevMonth,
     goToNextMonth,
-    setView,
     goToToday,
+    setView,
     selectDate,
     setHoverDate,
-    clear,
-    isDateSelected,
     hoverDate,
+    clear,
   };
 }

@@ -11,6 +11,8 @@ import type {
   SelectionMode,
   JalaliDateRange,
   InternalSelectedValue,
+  SelectedDateValue,
+  DateRange,
 } from "../hooks/types";
 import { Header } from "./Header";
 import { Weekdays } from "./Weekdays";
@@ -49,12 +51,6 @@ import type {
   DatePickerClassNames,
   DatePickerStyles,
 } from "../theme/style-slots";
-
-// تایپ‌های عمومی مخصوص مصرف‌کننده (Strict JS Date)
-export type DateRange = [Date | null, Date | null];
-
-export type SelectedDateValue<M extends SelectionMode = "single"> =
-  M extends "single" ? Date | null : M extends "range" ? DateRange : Date[];
 
 export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   /** حالت انتخاب تاریخ: single | range | multiple */
