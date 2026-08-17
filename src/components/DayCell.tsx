@@ -38,13 +38,13 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
   const isCurrentMonth = cell?.isCurrentMonth ?? props.isCurrentMonth ?? true;
   const isSelected = cell?.isSelected ?? props.isSelected ?? false;
   const isToday = cell?.isToday ?? props.isToday ?? false;
-  const isHoliday = props.isHoliday ?? cell?.isHoliday ?? false;
+  const isHoliday =
+    props.isHoliday ?? (cell && "isHoliday" in cell ? cell.isHoliday : false);
   const isInRange = cell?.isInRange ?? props.isInRange ?? false;
   const isRangeStart = cell?.isRangeStart ?? props.isRangeStart ?? false;
   const isRangeEnd = cell?.isRangeEnd ?? props.isRangeEnd ?? false;
   const disabled = cell?.isDisabled ?? props.disabled ?? false;
 
-  // مدیریت رنگ متن و پس‌زمینه
   let backgroundColor = "transparent";
   let textColor = isCurrentMonth
     ? theme.colors.textPrimary
@@ -62,15 +62,6 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
     textColor = theme.colors.holiday;
   }
 
-  let borderRadius = theme.radii.md;
-  if (isRangeStart) {
-    borderRadius = `${theme.radii.md} 0 0 ${theme.radii.md}`;
-  } else if (isRangeEnd) {
-    borderRadius = `0 ${theme.radii.md} ${theme.radii.md} 0`;
-  } else if (isInRange) {
-    borderRadius = "0px";
-  }
-
   const handleClick = () => {
     if (disabled || !isCurrentMonth) return;
     if (props.onClick) props.onClick();
@@ -85,8 +76,8 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
       onClick={handleClick}
       onFocus={() => props.onFocus?.(jalaliDate)}
       style={{
-        width: "38px",
-        height: "38px",
+        width: "36px",
+        height: "36px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -94,11 +85,11 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
           isToday && !isSelected && !isRangeStart && !isRangeEnd
             ? `1.5px solid ${theme.colors.todayBorder}`
             : "none",
-        borderRadius,
+        borderRadius: theme.radii.md, // گردی یکپارچه و یکنواخت برای تمام روزها
         backgroundColor,
         color: textColor,
         cursor: disabled || !isCurrentMonth ? "default" : "pointer",
-        fontSize: "0.9rem",
+        fontSize: "0.85rem",
         fontWeight:
           isSelected || isToday || isRangeStart || isRangeEnd ? 700 : 500,
         transition: "all 0.15s ease",
@@ -117,7 +108,7 @@ export const DayCell: React.FC<DayCellProps> = (props) => {
           e.currentTarget.style.backgroundColor = isHoliday
             ? theme.colors.holidayBackground
             : theme.colors.backgroundHover;
-          e.currentTarget.style.transform = "scale(1.08)";
+          e.currentTarget.style.transform = "scale(1.06)";
         }
       }}
       onMouseLeave={(e) => {

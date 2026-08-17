@@ -1,3 +1,4 @@
+// src/components/MonthYearPicker.tsx
 import React, { useRef, useEffect } from "react";
 import { useTheme } from "../theme/ThemeProvider";
 import { PERSIAN_MONTH_NAMES } from "../core/constants";
@@ -34,25 +35,22 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
-        padding: "12px",
+        gap: "8px",
+        padding: "10px",
         width: "100%",
-        height: "280px",
         boxSizing: "border-box",
-        justifyContent: "space-between",
       }}
     >
-      {/* اسکرول افقی سال‌ها */}
       <div
         style={{
           display: "flex",
-          gap: "6px",
+          gap: "4px",
           overflowX: "auto",
           paddingBottom: "4px",
           scrollbarWidth: "none",
         }}
       >
-        {Array.from({ length: 35 }, (_, i) => currentYear - 17 + i).map(
+        {Array.from({ length: 31 }, (_, i) => currentYear - 15 + i).map(
           (year) => {
             const isSelected = year === currentYear;
             return (
@@ -62,8 +60,8 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
                 type="button"
                 onClick={() => onSelectYear(year)}
                 style={{
-                  padding: "6px 12px",
-                  borderRadius: theme.radii.md,
+                  padding: "4px 10px",
+                  borderRadius: theme.radii.sm,
                   border: "none",
                   background: isSelected ? theme.colors.primary : "transparent",
                   color: isSelected
@@ -71,7 +69,7 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
                     : theme.colors.textPrimary,
                   cursor: "pointer",
                   fontWeight: isSelected ? 700 : 500,
-                  fontSize: "0.85rem",
+                  fontSize: "0.8rem",
                   whiteSpace: "nowrap",
                   transition: "all 0.15s ease",
                   flexShrink: 0,
@@ -93,14 +91,11 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
         )}
       </div>
 
-      {/* ماتریس ۳ در ۴ ماه‌های سال */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
-          gridTemplateRows: "repeat(4, 1fr)",
-          gap: "8px",
-          flex: 1,
+          gap: "6px",
         }}
       >
         {PERSIAN_MONTH_NAMES.map((name, index) => {
@@ -111,6 +106,7 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
               type="button"
               onClick={() => onSelectMonth(index + 1)}
               style={{
+                padding: "8px 4px",
                 borderRadius: theme.radii.md,
                 border: "none",
                 background: isSelected
@@ -121,10 +117,8 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
                   : theme.colors.textPrimary,
                 cursor: "pointer",
                 fontWeight: isSelected ? 700 : 500,
-                fontSize: "0.85rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                fontSize: "0.82rem",
+                textAlign: "center",
                 transition: "all 0.15s ease",
               }}
               onMouseEnter={(e) => {

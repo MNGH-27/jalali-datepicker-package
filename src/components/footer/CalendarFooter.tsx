@@ -3,37 +3,25 @@ import React from "react";
 import { useTheme } from "../../theme/ThemeProvider";
 
 export interface CalendarFooterProps {
+  onToday?: () => void;
+  onClear?: () => void;
   onTodayClick?: () => void;
   onClearClick?: () => void;
   showClear?: boolean;
-  mode?: any;
-  digitType?: "persian" | "latin";
-  showStatusText?: boolean;
   showActions?: boolean;
-  selectedDate?: any;
-  selectedRange?: any;
-  styles?: any;
   [key: string]: any;
 }
 
 export const CalendarFooter: React.FC<CalendarFooterProps> = ({
+  onToday,
+  onClear,
   onTodayClick,
   onClearClick,
-  showClear = true,
 }) => {
   const { theme } = useTheme();
 
-  const buttonStyle: React.CSSProperties = {
-    padding: "6px 14px",
-    borderRadius: theme.radii.md,
-    border: `1px solid ${theme.colors.border}`,
-    background: "transparent",
-    color: theme.colors.textPrimary,
-    fontSize: "0.8rem",
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-  };
+  const handleToday = onToday || onTodayClick;
+  const handleClear = onClear || onClearClick;
 
   return (
     <div
@@ -41,45 +29,60 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 12px",
+        padding: "8px 12px",
         borderTop: `1px solid ${theme.colors.border}`,
-        marginTop: "6px",
+        backgroundColor: theme.colors.surface,
       }}
     >
-      {onTodayClick && (
+      {handleToday && (
         <button
           type="button"
-          onClick={onTodayClick}
+          onClick={handleToday}
           style={{
-            ...buttonStyle,
-            borderColor: theme.colors.primary,
+            padding: "5px 12px",
+            borderRadius: theme.radii.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.background,
             color: theme.colors.primary,
+            fontSize: "0.8rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.15s ease",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor =
-              theme.colors.backgroundHover;
+              theme.colors.rangeBackground;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.backgroundColor = theme.colors.background;
           }}
         >
           برو به امروز
         </button>
       )}
 
-      {showClear && onClearClick && (
+      {handleClear && (
         <button
           type="button"
-          onClick={onClearClick}
-          style={buttonStyle}
+          onClick={handleClear}
+          style={{
+            padding: "5px 12px",
+            borderRadius: theme.radii.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.background,
+            color: theme.colors.textSecondary,
+            fontSize: "0.8rem",
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+          }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor =
-              theme.colors.backgroundHover;
             e.currentTarget.style.color = theme.colors.holiday;
+            e.currentTarget.style.borderColor = theme.colors.holiday;
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-            e.currentTarget.style.color = theme.colors.textPrimary;
+            e.currentTarget.style.color = theme.colors.textSecondary;
+            e.currentTarget.style.borderColor = theme.colors.border;
           }}
         >
           پاک کردن
