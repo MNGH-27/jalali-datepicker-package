@@ -256,7 +256,6 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
 
       <Weekdays
         firstDayOfWeek={firstDayOfWeek}
-        direction={direction}
         classNames={classNames}
         styles={styles}
       />
@@ -297,23 +296,25 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
       aria-label="تقویم دوقلو شمسی"
       dir={direction}
       className={mergeClassNames(className, classNames?.calendar)}
-      style={{
-        "--pdp-cell-size": "36px",
-        "--pdp-cell-gap": "4px",
-        "--pdp-calendar-pane-width": "276px",
-        display: "flex",
-        flexWrap: "wrap",
-        gap: "24px",
-        padding: "16px",
-        backgroundColor: theme.colors.background,
-        color: theme.colors.textPrimary,
-        borderRadius: theme.radii.lg,
-        border: `1px solid ${theme.colors.border}`,
-        boxShadow: theme.shadows.lg,
-        width: "fit-content",
-        ...style,
-        ...styles?.calendar,
-      } as React.CSSProperties}
+      style={
+        {
+          "--pdp-cell-size": "36px",
+          "--pdp-cell-gap": "4px",
+          "--pdp-calendar-pane-width": "276px",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "24px",
+          padding: "16px",
+          backgroundColor: theme.colors.background,
+          color: theme.colors.textPrimary,
+          borderRadius: theme.radii.lg,
+          border: `1px solid ${theme.colors.border}`,
+          boxShadow: theme.shadows.lg,
+          width: "fit-content",
+          ...style,
+          ...styles?.calendar,
+        } as React.CSSProperties
+      }
     >
       {renderMonthPane(viewState.year, viewState.month, leftGrid, true)}
       <div
