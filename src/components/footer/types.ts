@@ -1,6 +1,10 @@
 import type { JalaliDate } from "../../core/types";
 import type { JalaliDateRange } from "../../hooks/types";
 import type { JalaliTime } from "../../plugins/time-picker/types";
+import type {
+  DatePickerClassNames,
+  DatePickerStyles,
+} from "../../theme/style-slots";
 
 export interface CalendarFooterProps {
   /** Selected single date */
@@ -11,6 +15,8 @@ export interface CalendarFooterProps {
   selectedDates?: JalaliDate[];
   /** Selected time if time picker is active */
   selectedTime?: JalaliTime | null;
+  /** Whether status text includes seconds. */
+  showSeconds?: boolean;
   /** Current selection mode */
   mode?: "single" | "range" | "multiple";
   /** Number display format */
@@ -25,4 +31,8 @@ export interface CalendarFooterProps {
   onClear?: () => void;
   /** Callback for 'Confirm/Apply' action */
   onConfirm?: () => void;
+  /** Layout direction. */
+  direction?: "rtl" | "ltr";
+  classNames?: DatePickerClassNames;
+  styles?: DatePickerStyles;
 }

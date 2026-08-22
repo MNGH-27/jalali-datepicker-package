@@ -1,7 +1,10 @@
-// src/components/Header.tsx
-import React from "react";
-import { useTheme } from "../theme/ThemeProvider";
+import React, { useState } from "react";
 import { toPersianDigits } from "../formatters/persian-digits";
+import type {
+  DatePickerClassNames,
+  DatePickerStyles,
+} from "../theme/style-slots";
+import { useTheme } from "../theme/ThemeProvider";
 
 export interface HeaderProps {
   year: number;
@@ -10,7 +13,13 @@ export interface HeaderProps {
   onNextMonth: () => void;
   onTitleClick?: () => void;
   isPickerOpen?: boolean;
+  digitType?: "persian" | "latin";
+  direction?: "rtl" | "ltr";
+  classNames?: DatePickerClassNames;
+  styles?: DatePickerStyles;
 }
+
+type HoverTarget = "prev" | "title" | "next" | null;
 
 export const Header: React.FC<HeaderProps> = ({
   year,
@@ -18,44 +27,58 @@ export const Header: React.FC<HeaderProps> = ({
   onPrevMonth,
   onNextMonth,
   onTitleClick,
-  isPickerOpen,
+  isPickerOpen = false,
+  digitType = "persian",
+  direction = "rtl",
+  classNames,
+  styles,
 }) => {
   const { theme } = useTheme();
+  const [hovered, setHovered] = useState<HoverTarget>(null);
+  const displayYear =
+    digitType === "persian" ? toPersianDigits(year) : String(year);
+
+  const navStyle = (target: Exclude<HoverTarget, "title" | null>) => ({
+    width: "32px",
+    height: "32px",
+    padding: 0,
+    borderRadius: theme.radii.md,
+    border: "none",
+    backgroundColor:
+      hovered === target ? theme.colors.backgroundHover : "transparent",
+    color: theme.colors.textPrimary,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background-color 0.15s ease, color 0.15s ease",
+    ...styles?.navButton,
+  });
 
   return (
     <div
+      dir={direction}
+      className={classNames?.header}
       style={{
         display: "flex",
+        minHeight: "40px",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "10px 14px",
+        gap: "8px",
+        padding: "4px 0 10px",
         borderBottom: `1px solid ${theme.colors.border}`,
         userSelect: "none",
+        ...styles?.header,
       }}
     >
-      {/* دکمه ماه قبل */}
       <button
         type="button"
         onClick={onPrevMonth}
         aria-label="ماه قبل"
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "6px",
-          borderRadius: theme.radii.md,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: theme.colors.textPrimary,
-          transition: "all 0.15s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = theme.colors.backgroundHover;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "transparent";
-        }}
+        className={classNames?.navButton}
+        style={navStyle("prev")}
+        onMouseEnter={() => setHovered("prev")}
+        onMouseLeave={() => setHovered(null)}
       >
         <svg
           width="18"
@@ -66,41 +89,44 @@ export const Header: React.FC<HeaderProps> = ({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
+          style={{ transform: direction === "ltr" ? "scaleX(-1)" : undefined }}
         >
           <polyline points="9 18 15 12 9 6" />
         </svg>
       </button>
 
-      {/* عنوان ماه و سال */}
       <button
         type="button"
         onClick={onTitleClick}
+        aria-expanded={isPickerOpen}
+        className={classNames?.headerTitle}
         style={{
-          background: isPickerOpen
-            ? theme.colors.backgroundHover
-            : "transparent",
-          border: "none",
-          cursor: "pointer",
+          minHeight: "32px",
           padding: "6px 12px",
           borderRadius: theme.radii.md,
+          border: "none",
+          backgroundColor:
+            isPickerOpen || hovered === "title"
+              ? theme.colors.backgroundHover
+              : "transparent",
+          color: theme.colors.textPrimary,
+          cursor: onTitleClick ? "pointer" : "default",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "6px",
           fontSize: "0.95rem",
           fontWeight: 700,
-          color: theme.colors.textPrimary,
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          transition: "all 0.15s ease",
+          whiteSpace: "nowrap",
+          transition: "background-color 0.15s ease",
+          ...styles?.headerTitle,
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = theme.colors.backgroundHover;
-        }}
-        onMouseLeave={(e) => {
-          if (!isPickerOpen)
-            e.currentTarget.style.backgroundColor = "transparent";
-        }}
+        onMouseEnter={() => setHovered("title")}
+        onMouseLeave={() => setHovered(null)}
       >
         <span>
-          {monthName} {toPersianDigits(year)}
+          {monthName} {displayYear}
         </span>
         <svg
           width="14"
@@ -111,6 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
           style={{
             transform: isPickerOpen ? "rotate(180deg)" : "rotate(0deg)",
             transition: "transform 0.2s ease",
@@ -120,29 +147,14 @@ export const Header: React.FC<HeaderProps> = ({
         </svg>
       </button>
 
-      {/* دکمه ماه بعد */}
       <button
         type="button"
         onClick={onNextMonth}
         aria-label="ماه بعد"
-        style={{
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          padding: "6px",
-          borderRadius: theme.radii.md,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: theme.colors.textPrimary,
-          transition: "all 0.15s ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = theme.colors.backgroundHover;
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "transparent";
-        }}
+        className={classNames?.navButton}
+        style={navStyle("next")}
+        onMouseEnter={() => setHovered("next")}
+        onMouseLeave={() => setHovered(null)}
       >
         <svg
           width="18"
@@ -153,6 +165,8 @@ export const Header: React.FC<HeaderProps> = ({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
+          style={{ transform: direction === "ltr" ? "scaleX(-1)" : undefined }}
         >
           <polyline points="15 18 9 12 15 6" />
         </svg>

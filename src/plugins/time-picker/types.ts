@@ -29,12 +29,23 @@ export interface TimePickerProps {
   minuteStep?: number;
   /** Step increment for hours (default: 1). */
   hourStep?: number;
+  /** Step increment for seconds (default: 1). */
+  secondStep?: number;
   /** Whether to render the seconds selector segment. */
   showSeconds?: boolean;
   /** Format of rendered digits ('persian' or 'latin'). */
   digitType?: "persian" | "latin";
   /** Whether the time picker is disabled. */
   disabled?: boolean;
+  /** Layout direction for the label and controls. */
+  direction?: "rtl" | "ltr";
+
+  /** @deprecated Use value={{ hour, minute, second }} instead. */
+  hours?: number;
+  /** @deprecated Use value={{ hour, minute, second }} instead. */
+  minutes?: number;
+  /** @deprecated Use value={{ hour, minute, second }} instead. */
+  seconds?: number;
 
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;

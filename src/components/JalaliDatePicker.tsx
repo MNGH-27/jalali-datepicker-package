@@ -49,6 +49,8 @@ import type {
   DatePickerClassNames,
   DatePickerStyles,
 } from "../theme/style-slots";
+import { mergeClassNames } from "../theme/style-utils";
+import { useTheme } from "../theme/ThemeProvider";
 
 export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   /** حالت انتخاب تاریخ: single | range | multiple */
@@ -75,6 +77,10 @@ export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   placeholder?: string;
   /** شروع هفته (۰ = شنبه) */
   firstDayOfWeek?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  /** تاریخ اولیه برای ماه قابل مشاهده */
+  initialViewDate?: Date | JalaliDate;
+  /** جهت چیدمان و رفتار کلیدهای افقی */
+  direction?: "rtl" | "ltr";
 
   // استایل‌دهی
   className?: string;
@@ -86,7 +92,7 @@ export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   showFooter?: boolean;
   showStatusText?: boolean;
   showActions?: boolean;
-  onConfirm?: () => void;
+  onConfirm?: (value: SelectedDateValue<M>) => void;
 
   // زمان
   enableTime?: boolean;
@@ -95,6 +101,7 @@ export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   onTimeChange?: (time: JalaliTime) => void;
   minuteStep?: number;
   hourStep?: number;
+  secondStep?: number;
   showSeconds?: boolean;
 
   // تقویم دو ماهه و اینپوت ماسک‌دار
@@ -105,6 +112,40 @@ export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   events?: CalendarEvent[];
   showHolidays?: boolean;
   customHolidays?: CustomHolidayRule[];
+
+  /** بستن popover با کلیک بیرون */
+  closeOnOutsideClick?: boolean;
+  /** بستن popover/modal با Escape */
+  closeOnEscape?: boolean;
+  /** اعلان تغییر وضعیت باز/بسته */
+  onOpenChange?: (isOpen: boolean) => void;
+}
+
+function getFirstDateFromValue<M extends SelectionMode>(
+  selectedValue: SelectedDateValue<M> | undefined,
+): Date | undefined {
+  if (
+    selectedValue instanceof Date &&
+    !Number.isNaN(selectedValue.getTime())
+  ) {
+    return selectedValue;
+  }
+  if (!Array.isArray(selectedValue)) return undefined;
+  for (const candidate of selectedValue as readonly unknown[]) {
+    if (candidate instanceof Date && !Number.isNaN(candidate.getTime())) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function getTimeFromDate(date: Date | undefined): JalaliTime | undefined {
+  if (!date || Number.isNaN(date.getTime())) return undefined;
+  return {
+    hour: date.getHours(),
+    minute: date.getMinutes(),
+    second: date.getSeconds(),
+  };
 }
 
 export function JalaliDatePicker<M extends SelectionMode = "single">({
@@ -116,6 +157,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   maxDate,
   isDateDisabled,
   firstDayOfWeek = 0,
+  initialViewDate,
+  direction = "rtl",
   variant = "inline",
   placeholder = "انتخاب تاریخ...",
   digitType = "persian",
@@ -133,17 +176,33 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   onTimeChange,
   minuteStep = 1,
   hourStep = 1,
+  secondStep = 1,
   showSeconds = false,
   numberOfMonths = 1,
   useMaskedInput = false,
   events,
   showHolidays = false,
   customHolidays,
+  closeOnOutsideClick = true,
+  closeOnEscape = true,
+  onOpenChange,
 }: JalaliDatePickerProps<M>) {
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(variant === "inline");
+  const isOpenRef = useRef(variant === "inline");
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const onOpenChangeRef = useRef(onOpenChange);
   const isModal = variant === "modal";
+  useEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  }, [onOpenChange]);
+  const setOpen = useCallback((nextOpen: boolean) => {
+    if (isOpenRef.current === nextOpen) return;
+    isOpenRef.current = nextOpen;
+    setIsOpen(nextOpen);
+    onOpenChangeRef.current?.(nextOpen);
+  }, []);
 
   // ۱. تبدیل ورودی‌های Date به JalaliDate برای هوک داخلی
   const internalJalaliValue = useMemo<
@@ -204,30 +263,51 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     () => (maxDate ? jsDateToJalali(maxDate) : undefined),
     [maxDate],
   );
+  const internalInitialViewDate = useMemo(() => {
+    if (initialViewDate) {
+      return initialViewDate instanceof Date
+        ? jsDateToJalali(initialViewDate)
+        : initialViewDate;
+    }
+    const selectedDate =
+      getFirstDateFromValue(value) ?? getFirstDateFromValue(defaultValue);
+    return selectedDate ? jsDateToJalali(selectedDate) : undefined;
+  }, [defaultValue, initialViewDate, value]);
+
+  const controlledDateTime = useMemo(
+    () => getTimeFromDate(getFirstDateFromValue(value)),
+    [value],
+  );
 
   // ۲. مدیریت زمان
   const [internalTime, setInternalTime] = useState<JalaliTime>(
-    () => defaultTimeValue ?? getCurrentTime(),
+    () =>
+      defaultTimeValue ??
+      getTimeFromDate(getFirstDateFromValue(defaultValue)) ??
+      getCurrentTime(),
   );
   const activeTime =
-    timeValue !== undefined ? (timeValue ?? getCurrentTime()) : internalTime;
+    timeValue === null
+      ? { hour: 0, minute: 0, second: 0 }
+      : (timeValue ?? controlledDateTime ?? internalTime);
 
-  const handleTimeChange = useCallback(
-    (newTime: JalaliTime) => {
-      if (timeValue === undefined) setInternalTime(newTime);
-      onTimeChange?.(newTime);
-    },
-    [timeValue, onTimeChange],
+  const internalIsDateDisabled = useCallback(
+    (jDate: JalaliDate) =>
+      isDateDisabled ? isDateDisabled(jalaliToJsDate(jDate)) : false,
+    [isDateDisabled],
   );
 
   // ۳. تبدیل خروجی JalaliDate به Date استاندارد JS
   const convertJalaliToDateOutput = useCallback(
-    (jVal: InternalSelectedValue<M>): SelectedDateValue<M> => {
+    (
+      jVal: InternalSelectedValue<M>,
+      timeOverride: JalaliTime = activeTime,
+    ): SelectedDateValue<M> => {
       if (!jVal) return null as SelectedDateValue<M>;
 
-      const h = enableTime ? activeTime.hour : 0;
-      const m = enableTime ? activeTime.minute : 0;
-      const s = enableTime && showSeconds ? (activeTime.second ?? 0) : 0;
+      const h = enableTime ? timeOverride.hour : 0;
+      const m = enableTime ? timeOverride.minute : 0;
+      const s = enableTime && showSeconds ? (timeOverride.second ?? 0) : 0;
 
       if (mode === "single" && !Array.isArray(jVal)) {
         return jalaliToJsDate(
@@ -241,8 +321,15 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       if (mode === "range" && Array.isArray(jVal)) {
         const [start, end] = jVal as JalaliDateRange;
         return [
-          start ? jalaliToJsDate(start, 0, 0, 0) : null,
-          end ? jalaliToJsDate(end, 23, 59, 59) : null,
+          start ? jalaliToJsDate(start, h, m, s) : null,
+          end
+            ? jalaliToJsDate(
+                end,
+                enableTime ? h : 23,
+                enableTime ? m : 59,
+                enableTime ? s : 59,
+              )
+            : null,
         ] as SelectedDateValue<M>;
       }
 
@@ -275,16 +362,39 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     mode,
     value: internalJalaliValue,
     defaultValue: internalDefaultJalaliValue,
+    initialViewDate: internalInitialViewDate,
     minDate: internalMinDate,
     maxDate: internalMaxDate,
     firstDayOfWeek,
-    isDateDisabled: isDateDisabled
-      ? (jDate: JalaliDate) => isDateDisabled(jalaliToJsDate(jDate))
-      : undefined,
+    isDateDisabled: isDateDisabled ? internalIsDateDisabled : undefined,
     onChange: (val) => {
       onChange?.(convertJalaliToDateOutput(val));
     },
   });
+
+  const handleTimeChange = useCallback(
+    (newTime: JalaliTime) => {
+      if (timeValue === undefined) setInternalTime(newTime);
+      onTimeChange?.(newTime);
+      const hasSelectedDate = Array.isArray(selected)
+        ? selected.some(Boolean)
+        : Boolean(selected);
+      if (hasSelectedDate) {
+        onChange?.(
+          convertJalaliToDateOutput(
+            selected as InternalSelectedValue<M>,
+            newTime,
+          ),
+        );
+      }
+    }, [
+      timeValue,
+      onTimeChange,
+      selected,
+      onChange,
+      convertJalaliToDateOutput,
+    ],
+  );
 
   const singleSelectedDate =
     mode === "single" ? (selected as JalaliDate | null) : null;
@@ -292,7 +402,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const handleDateSelect = (d: JalaliDate) => {
     selectDate(d);
     if (variant === "popover" && mode === "single" && !enableTime) {
-      setIsOpen(false);
+      setOpen(false);
     }
   };
 
@@ -304,23 +414,52 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       selectedDate: singleSelectedDate,
       onSelectDate: handleDateSelect,
       onViewChange: setView,
-      isRtl: true,
+      isRtl: direction === "rtl",
     });
 
-  // بستن مدال با Esc
+  // همگام‌سازی variant و مدیریت بستن با کلیک بیرون / Escape
+  useEffect(() => {
+    setOpen(variant === "inline");
+  }, [variant, setOpen]);
+
+  useEffect(() => {
+    if (!isOpen || variant === "inline") return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!closeOnOutsideClick || isModal) return;
+      const target = event.target;
+      if (target instanceof Node && !containerRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if (!closeOnEscape || event.key !== "Escape") return;
+      setOpen(false);
+      containerRef.current?.querySelector<HTMLInputElement>("input")?.focus();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleGlobalKeyDown);
+    };
+  }, [
+    closeOnEscape,
+    closeOnOutsideClick,
+    isModal,
+    isOpen,
+    setOpen,
+    variant,
+  ]);
+
+  // قفل اسکرول پس‌زمینه در مدال
   useEffect(() => {
     if (!isModal || !isOpen) return;
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
-    };
-
-    window.addEventListener("keydown", handleGlobalKeyDown);
     return () => {
       document.body.style.overflow = originalOverflow;
-      window.removeEventListener("keydown", handleGlobalKeyDown);
     };
   }, [isModal, isOpen]);
 
@@ -342,6 +481,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       firstDayOfWeek,
       minDate: internalMinDate,
       maxDate: internalMaxDate,
+      isDateDisabled: isDateDisabled ? internalIsDateDisabled : undefined,
     });
 
     if (mode !== "range") return rawGrid;
@@ -372,6 +512,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     firstDayOfWeek,
     internalMinDate,
     internalMaxDate,
+    internalIsDateDisabled,
+    isDateDisabled,
     mode,
     selected,
     hoverDate,
@@ -392,10 +534,23 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     }
     if (mode === "range") {
       const [start, end] = (selected as JalaliDateRange) || [null, null];
+      const timePart = enableTime
+        ? ` ${formatTimeString(activeTime, showSeconds, digitType)}`
+        : "";
       if (start && end) {
-        return `${formatJalaliDate(start, "YYYY/MM/DD", { digitType })} - ${formatJalaliDate(end, "YYYY/MM/DD", { digitType })}`;
+        return `${formatJalaliDate(start, "YYYY/MM/DD", { digitType })}${timePart} - ${formatJalaliDate(end, "YYYY/MM/DD", { digitType })}${timePart}`;
       }
-      if (start) return formatJalaliDate(start, "YYYY/MM/DD", { digitType });
+      if (start) {
+        return `${formatJalaliDate(start, "YYYY/MM/DD", { digitType })}${timePart}`;
+      }
+    }
+    if (mode === "multiple") {
+      const count = (selected as JalaliDate[]).length;
+      if (count > 0) {
+        const displayCount =
+          digitType === "persian" ? toPersianDigits(count) : String(count);
+        return `${displayCount} تاریخ انتخاب شده`;
+      }
     }
     return "";
   }, [selected, mode, digitType, enableTime, activeTime, showSeconds]);
@@ -407,7 +562,15 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     showPrevArrow = true,
     showNextArrow = true,
   ) => (
-    <div style={{ minWidth: "270px" }}>
+    <div
+      dir={direction}
+      className={classNames?.calendarPane}
+      style={{
+        width: "var(--pdp-calendar-pane-width, 276px)",
+        minWidth: "var(--pdp-calendar-pane-width, 276px)",
+        ...styles?.calendarPane,
+      }}
+    >
       <Header
         year={y}
         monthName={PERSIAN_MONTH_NAMES[m]}
@@ -415,26 +578,35 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         onNextMonth={showNextArrow ? goToNextMonth : () => {}}
         onTitleClick={() => setShowMonthYearPicker((prev) => !prev)}
         isPickerOpen={showMonthYearPicker}
+        digitType={digitType}
+        direction={direction}
+        classNames={classNames}
+        styles={styles}
       />
 
       <Weekdays
         firstDayOfWeek={firstDayOfWeek}
+        direction={direction}
         classNames={classNames}
         styles={styles}
       />
 
       <div
         role="grid"
-        aria-label={`${PERSIAN_MONTH_NAMES[m]} ${toPersianDigits(y)}`}
+        aria-label={`${PERSIAN_MONTH_NAMES[m]} ${
+          digitType === "persian" ? toPersianDigits(y) : y
+        }`}
+        dir={direction}
         className={classNames?.grid}
         style={{
           display: "grid",
+          width: "var(--pdp-calendar-pane-width, 276px)",
           gridTemplateColumns: "repeat(7, var(--pdp-cell-size, 36px))",
-          gap: "4px",
+          gap: "var(--pdp-cell-gap, 4px)",
           ...styles?.grid,
         }}
       >
-        {paneGrid.map((cell, index) => {
+        {paneGrid.map((cell) => {
           const holidayInfo = showHolidays
             ? getOfficialHoliday(cell.jalali, customHolidays)
             : null;
@@ -442,7 +614,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
 
           return (
             <DayCell
-              key={index}
+              key={`${cell.jalali.year}-${cell.jalali.month}-${cell.jalali.day}`}
               cell={cell}
               digitType={digitType}
               isHoliday={Boolean(holidayInfo)}
@@ -463,9 +635,10 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
 
   const calendarContent = (
     <div
-      role={isModal ? "dialog" : "region"}
+      role={variant === "inline" ? "region" : "dialog"}
       aria-modal={isModal ? true : undefined}
       aria-label="تقویم شمسی"
+      dir={direction}
       onKeyDown={handleKeyDown}
       onClick={(e) => isModal && e.stopPropagation()}
       className={classNames?.calendar}
@@ -473,16 +646,21 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         position:
           variant === "popover" ? "absolute" : isModal ? "relative" : "static",
         top: variant === "popover" ? "calc(100% + 4px)" : undefined,
-        right: variant === "popover" ? 0 : undefined,
+        right: variant === "popover" && direction === "rtl" ? 0 : undefined,
+        left: variant === "popover" && direction === "ltr" ? 0 : undefined,
         zIndex: isModal ? 1001 : 50,
         padding: "16px",
-        backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-        borderRadius: "var(--pdp-border-radius, 12px)",
-        border: "1px solid var(--pdp-surface-border, #e2e8f0)",
+        backgroundColor: theme.colors.background,
+        color: theme.colors.textPrimary,
+        borderRadius: theme.radii.lg,
+        border: `1px solid ${theme.colors.border}`,
         boxShadow: isModal
           ? "0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3)"
-          : "var(--pdp-shadow)",
+          : theme.shadows.lg,
         width: "fit-content",
+        maxWidth: "calc(100vw - 16px)",
+        boxSizing: "border-box",
+        overflowX: "auto",
         userSelect: "none",
         display: "flex",
         flexDirection: "column",
@@ -494,25 +672,35 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         <button
           type="button"
           aria-label="بستن"
-          onClick={() => setIsOpen(false)}
+          onClick={() => setOpen(false)}
+          className={classNames?.closeButton}
           style={{
             position: "absolute",
             top: "10px",
-            left: "10px",
+            insetInlineEnd: "10px",
             background: "none",
             border: "none",
             cursor: "pointer",
             fontSize: "16px",
-            color: "var(--pdp-text-muted, #94a3b8)",
+            color: theme.colors.textSecondary,
             lineHeight: 1,
             zIndex: 10,
+            ...styles?.closeButton,
           }}
         >
           ✕
         </button>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <div
+        className={classNames?.calendarBody}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          ...styles?.calendarBody,
+        }}
+      >
         {showMonthYearPicker ? (
           <MonthYearPicker
             currentYear={viewYear}
@@ -522,14 +710,22 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               setShowMonthYearPicker(false);
             }}
             onSelectYear={(y) => setView(y, viewMonth)}
+            digitType={digitType}
+            direction={direction}
+            classNames={classNames}
+            styles={styles}
           />
         ) : (
           <>
             <div
+              dir={direction}
+              className={classNames?.calendarPanes}
               style={{
                 display: "flex",
                 gap: "16px",
                 alignItems: "flex-start",
+                flexWrap: "wrap",
+                ...styles?.calendarPanes,
               }}
             >
               {renderCalendarPane(
@@ -543,10 +739,12 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               {numberOfMonths === 2 && (
                 <>
                   <div
+                    className={classNames?.paneDivider}
                     style={{
                       width: "1px",
-                      backgroundColor: "var(--pdp-surface-border, #e2e8f0)",
+                      backgroundColor: theme.colors.border,
                       alignSelf: "stretch",
+                      ...styles?.paneDivider,
                     }}
                   />
                   {renderCalendarPane(
@@ -566,8 +764,10 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
                 onChange={handleTimeChange}
                 minuteStep={minuteStep}
                 hourStep={hourStep}
+                secondStep={secondStep}
                 showSeconds={showSeconds}
                 digitType={digitType}
+                direction={direction}
                 classNames={classNames}
                 styles={styles}
               />
@@ -589,12 +789,18 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
                   mode === "multiple" ? (selected as JalaliDate[]) : undefined
                 }
                 selectedTime={enableTime ? activeTime : undefined}
+                showSeconds={showSeconds}
                 onToday={goToToday}
                 onClear={clear}
                 onConfirm={() => {
-                  if (variant !== "inline") setIsOpen(false);
-                  onConfirm?.();
+                  if (variant !== "inline") setOpen(false);
+                  onConfirm?.(
+                    convertJalaliToDateOutput(
+                      selected as InternalSelectedValue<M>,
+                    ),
+                  );
                 }}
+                direction={direction}
                 classNames={classNames}
                 styles={styles}
               />
@@ -608,13 +814,19 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   return (
     <div
       ref={containerRef}
-      className={className ?? classNames?.root}
+      dir={direction}
+      className={mergeClassNames(className, classNames?.root)}
       style={{
+        "--pdp-cell-size": "36px",
+        "--pdp-cell-gap": "4px",
+        "--pdp-calendar-pane-width": "276px",
         position: "relative",
         display: "inline-block",
+        color: theme.colors.textPrimary,
+        fontFamily: "inherit",
         ...style,
         ...styles?.root,
-      }}
+      } as React.CSSProperties}
     >
       {variant !== "inline" &&
         (useMaskedInput && mode === "single" && variant === "popover" ? (
@@ -630,7 +842,17 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
                 clear();
               }
             }}
-            onClick={() => setIsOpen(true)}
+            onClick={() => setOpen(true)}
+            direction={direction}
+            minDate={internalMinDate}
+            maxDate={internalMaxDate}
+            isDateDisabled={
+              isDateDisabled ? internalIsDateDisabled : undefined
+            }
+            wrapperClassName={classNames?.inputWrapper}
+            wrapperStyle={styles?.inputWrapper}
+            clearButtonClassName={classNames?.inputClearButton}
+            clearButtonStyle={styles?.inputClearButton}
             className={classNames?.input}
             style={styles?.input}
           />
@@ -638,25 +860,31 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
           <input
             type="text"
             readOnly
+            aria-haspopup="dialog"
+            aria-expanded={isOpen}
             placeholder={placeholder}
             value={formattedInputValue}
-            onClick={() => setIsOpen(true)}
+            onClick={() => setOpen(true)}
             className={classNames?.input}
             style={{
-              padding: "8px 12px",
-              borderRadius: "var(--pdp-border-radius, 8px)",
-              border: "1px solid var(--pdp-surface-border, #e2e8f0)",
-              backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-              color: "var(--pdp-text-primary, #0f172a)",
-              cursor: "pointer",
-              textAlign: "right",
-              direction: "rtl",
-              fontSize: "14px",
-              minWidth: enableTime
-                ? "200px"
+              width: enableTime
+                ? "230px"
                 : numberOfMonths === 2
-                  ? "240px"
-                  : "150px",
+                  ? "260px"
+                  : "190px",
+              minHeight: "40px",
+              boxSizing: "border-box",
+              padding: "8px 12px",
+              borderRadius: theme.radii.sm,
+              border: `1px solid ${theme.colors.border}`,
+              outlineColor: theme.colors.primary,
+              backgroundColor: theme.colors.background,
+              color: theme.colors.textPrimary,
+              cursor: "pointer",
+              textAlign: direction === "rtl" ? "right" : "left",
+              direction,
+              fontFamily: "inherit",
+              fontSize: "14px",
               ...styles?.input,
             }}
           />
@@ -666,7 +894,9 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         (isModal ? (
           <div
             role="presentation"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              if (closeOnOutsideClick) setOpen(false);
+            }}
             className={classNames?.modalBackdrop}
             style={{
               position: "fixed",
@@ -674,14 +904,14 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: "rgba(15, 23, 42, 0.6)",
+              backgroundColor: "rgba(15, 23, 42, 0.64)",
               backdropFilter: "blur(4px)",
               zIndex: 1000,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               padding: "16px",
-              direction: "rtl",
+              direction,
               ...styles?.modalBackdrop,
             }}
           >

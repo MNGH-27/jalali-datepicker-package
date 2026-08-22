@@ -4,6 +4,10 @@ import type {
   JalaliDayOfWeek,
 } from "../../core/types";
 import type { JalaliDateRange } from "../../hooks/types";
+import type {
+  DatePickerClassNames,
+  DatePickerStyles,
+} from "../../theme/style-slots";
 
 /**
  * Props for the DualMonthCalendar component.
@@ -27,4 +31,10 @@ export interface DualMonthCalendarProps {
   maxDate?: Date | JalaliDate;
   /** Custom disable rule predicate. */
   isDateDisabled?: (jalali: JalaliDate, gregorian: Date) => boolean;
+  /** Layout direction. */
+  direction?: "rtl" | "ltr";
+  className?: string;
+  style?: React.CSSProperties;
+  classNames?: DatePickerClassNames;
+  styles?: DatePickerStyles;
 }

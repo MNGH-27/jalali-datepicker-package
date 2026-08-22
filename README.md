@@ -63,7 +63,6 @@ import {
   JalaliDatePicker,
   DatePickerThemeProvider,
 } from "@mngh/jalali-datepicker";
-import "@mngh/jalali-datepicker/styles.css";
 
 export default function App() {
   const [date, setDate] = useState<Date | null>(null);
@@ -83,6 +82,7 @@ export default function App() {
 ```
 
 That's it — `date` is always a plain JavaScript `Date` object (or `null`). No conversion helpers, no adapters.
+The package ships with self-contained component styles, so there is no separate CSS file to import.
 
 ---
 
@@ -158,7 +158,6 @@ Opens the calendar in a full-screen dialog with a backdrop blur, scroll locking 
   mode="single"
   value={date}
   onChange={setDate}
-  modalTitle="Choose a date"
 />
 ```
 
@@ -246,9 +245,11 @@ When `enableTime` is set, the resolved `Date` passed to `onChange` already has t
 | -------------- | --------------------------------------------------- | ----------- | ----------------------------------------------- |
 | `enableTime`   | `boolean`                                           | `false`     | Shows the time picker panel below the calendar. |
 | `timeValue`    | `{ hour: number; minute: number; second?: number }` | `undefined` | Controlled time value.                          |
+| `defaultTimeValue` | `{ hour: number; minute: number; second?: number }` | Date/current time | Initial uncontrolled time.              |
 | `onTimeChange` | `(time) => void`                                    | `undefined` | Fires when the time inputs change.              |
 | `hourStep`     | `number`                                            | `1`         | Increment for the hour control.                 |
 | `minuteStep`   | `number`                                            | `1`         | Increment for the minute control.               |
+| `secondStep`   | `number`                                            | `1`         | Increment for the seconds control.              |
 | `showSeconds`  | `boolean`                                           | `false`     | Shows a seconds column.                         |
 
 ### Live masked input
@@ -260,35 +261,10 @@ When `enableTime` is set, the resolved `Date` passed to `onChange` already has t
   value={date}
   onChange={setDate}
   useMaskedInput
-  maskFormat="YYYY/MM/DD"
 />
 ```
 
 `useMaskedInput` turns the trigger `<input>` into a real-time Persian date mask: digits are inserted into the correct segment as the user types, slashes are auto-inserted, and an invalid segment (e.g. month `13`) is rejected without corrupting the rest of the string.
-
-### Shortcuts & presets bar
-
-```tsx
-<JalaliDatePicker
-  mode="range"
-  value={range}
-  onChange={setRange}
-  enablePresets
-  presetsOrientation="horizontal"
-  presets={[
-    { label: "Today", getValue: () => [new Date(), new Date()] },
-    { label: "This week", getValue: () => getThisWeekRange() },
-    { label: "This month", getValue: () => getThisMonthRange() },
-    { label: "Last 30 days", getValue: () => getLastNDaysRange(30) },
-  ]}
-/>
-```
-
-| Prop                 | Type                         | Default      | Description                                                  |
-| -------------------- | ---------------------------- | ------------ | ------------------------------------------------------------ |
-| `enablePresets`      | `boolean`                    | `false`      | Shows the presets sidebar/bar.                               |
-| `presetsOrientation` | `'horizontal' \| 'vertical'` | `'vertical'` | Layout of the presets list relative to the calendar.         |
-| `presets`            | `DatePickerPreset[]`         | `[]`         | Custom preset buttons; each computes its own value on click. |
 
 ### Iranian solar holidays & Fridays
 
@@ -298,7 +274,13 @@ When `enableTime` is set, the resolved `Date` passed to `onChange` already has t
   value={date}
   onChange={setDate}
   showHolidays
-  customHolidays={[{ month: 1, day: 1, label: "شرکت تعطیل است" }]}
+  customHolidays={[
+    {
+      date: { year: 1405, month: 0, day: 1 },
+      title: "شرکت تعطیل است",
+      isOff: true,
+    },
+  ]}
 />
 ```
 
@@ -312,13 +294,23 @@ When `showHolidays` is enabled, official Iranian solar-calendar holidays and eve
   value={date}
   onChange={setDate}
   events={[
-    { date: new Date(2026, 2, 21), color: "blue", label: "Team standup" },
-    { date: new Date(2026, 2, 25), color: "red", label: "Deadline" },
+    {
+      id: "standup",
+      date: { year: 1405, month: 0, day: 1 },
+      color: "blue",
+      title: "Team standup",
+    },
+    {
+      id: "deadline",
+      date: { year: 1405, month: 0, day: 5 },
+      color: "red",
+      title: "Deadline",
+    },
   ]}
 />
 ```
 
-Each entry in `events` renders a small colored dot/badge under the corresponding day cell; hovering or focusing the cell shows the event `label` in a tooltip. Multiple events on the same day stack as multiple dots.
+Each entry in `events` renders a small colored dot under the corresponding day cell. Its title is included in the cell's accessible label and native tooltip. Up to three event dots are shown per day.
 
 ### Footer status & action buttons
 
@@ -355,19 +347,12 @@ function CustomCalendar() {
     viewYear,
     viewMonth,
     grid,
-    selected,
-    hoverDate,
     goToPrevMonth,
     goToNextMonth,
-    goToPrevYear,
-    goToNextYear,
     goToToday,
     selectDate,
     setHoverDate,
     clear,
-    isSelected,
-    isToday,
-    isDisabled,
   } = useJalaliDatePicker({
     mode: "single",
     value: null,
@@ -391,15 +376,16 @@ function CustomCalendar() {
       <div className="grid grid-cols-7">
         {grid.map((cell) => (
           <button
-            key={cell.key}
+            key={`${cell.jalali.year}-${cell.jalali.month}-${cell.jalali.day}`}
             role="gridcell"
-            disabled={isDisabled(cell.date)}
-            aria-selected={isSelected(cell.date)}
-            data-today={isToday(cell.date)}
-            onMouseEnter={() => setHoverDate(cell.date)}
-            onClick={() => selectDate(cell.date)}
+            disabled={cell.isDisabled || !cell.isCurrentMonth}
+            aria-selected={cell.isSelected}
+            data-today={cell.isToday}
+            onMouseEnter={() => setHoverDate(cell.jalali)}
+            onMouseLeave={() => setHoverDate(null)}
+            onClick={() => selectDate(cell.jalali)}
           >
-            {cell.dayOfMonth}
+            {cell.dayNumber}
           </button>
         ))}
       </div>
@@ -419,18 +405,15 @@ function CustomCalendar() {
 | --------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
 | `viewYear`                        | `number`                       | The Jalali year currently displayed.                                                                         |
 | `viewMonth`                       | `number`                       | The Jalali month (0-indexed) currently displayed.                                                            |
-| `grid`                            | `CalendarCell[]`               | Flattened array of cell objects (including leading/trailing days from adjacent months) for the current view. |
-| `selected`                        | `SelectedDateValue`            | The current selection, shaped according to `mode`.                                                           |
-| `hoverDate`                       | `Date \| null`                 | The date currently under pointer/keyboard focus, used for range-preview rendering.                           |
+| `grid`                            | `JalaliCalendarCell[]`         | Flattened 42-cell array, including leading/trailing adjacent-month days.                                     |
+| `selected`                        | `InternalSelectedValue`        | Current Jalali selection, shaped according to `mode`.                                                        |
+| `hoverDate`                       | `JalaliDate \| null`           | Date currently under the pointer, used for range-preview rendering.                                         |
 | `goToPrevMonth` / `goToNextMonth` | `() => void`                   | Step the view by one month.                                                                                  |
-| `goToPrevYear` / `goToNextYear`   | `() => void`                   | Step the view by one year.                                                                                   |
 | `goToToday`                       | `() => void`                   | Reset the view to the month containing today.                                                                |
-| `selectDate`                      | `(date: Date) => void`         | Commit a date into the current selection according to `mode`.                                                |
-| `setHoverDate`                    | `(date: Date \| null) => void` | Update the hover-preview date (used for range mode).                                                         |
+| `setView`                         | `(year, month) => void`        | Jump to a specific Jalali year and zero-based month.                                                         |
+| `selectDate`                      | `(date: JalaliDate) => void`  | Commit a date into the current selection according to `mode`.                                                |
+| `setHoverDate`                    | `(date: JalaliDate \| null) => void` | Update the hover-preview date (used for range mode).                                                  |
 | `clear`                           | `() => void`                   | Reset the selection to its empty state (`null`, `[null, null]`, or `[]`).                                    |
-| `isSelected`                      | `(date: Date) => boolean`      | Whether a given date is part of the current selection.                                                       |
-| `isToday`                         | `(date: Date) => boolean`      | Whether a given date is today.                                                                               |
-| `isDisabled`                      | `(date: Date) => boolean`      | Whether a given date falls outside `minDate`/`maxDate` or matches a custom `disabledDates` rule.             |
 
 ---
 
@@ -440,27 +423,28 @@ function CustomCalendar() {
 
 | Prop                 | Type                                                     | Default                        | Description                                                 |
 | -------------------- | -------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------- |
-| `variant`            | `'inline' \| 'popover' \| 'modal'`                       | `'popover'`                    | How the calendar is presented.                              |
+| `variant`            | `'inline' \| 'popover' \| 'modal'`                       | `'inline'`                     | How the calendar is presented.                              |
 | `mode`               | `'single' \| 'range' \| 'multiple'`                      | `'single'`                     | Selection strategy.                                         |
 | `value`              | `Date \| null \| [Date \| null, Date \| null] \| Date[]` | —                              | Controlled value, shaped by `mode`.                         |
 | `defaultValue`       | same as `value`                                          | `null` / `[null, null]` / `[]` | Uncontrolled initial value.                                 |
 | `onChange`           | `(value) => void`                                        | —                              | Fires whenever the selection changes.                       |
 | `minDate`            | `Date`                                                   | `undefined`                    | Earliest selectable date.                                   |
 | `maxDate`            | `Date`                                                   | `undefined`                    | Latest selectable date.                                     |
-| `disabledDates`      | `(date: Date) => boolean`                                | `undefined`                    | Custom predicate to disable arbitrary dates.                |
+| `isDateDisabled`     | `(date: Date) => boolean`                                | `undefined`                    | Custom predicate to disable arbitrary dates.                |
 | `digitType`          | `'persian' \| 'latin'`                                   | `'persian'`                    | Digit glyphs used throughout the UI.                        |
+| `direction`          | `'rtl' \| 'ltr'`                                         | `'rtl'`                        | Layout and horizontal keyboard direction.                   |
+| `firstDayOfWeek`     | `0 \| 1 \| ... \| 6`                                    | `0` (Saturday)                 | First day shown in each week.                               |
+| `initialViewDate`    | `Date \| JalaliDate`                                     | selected date / today          | Initial visible Jalali month.                               |
 | `numberOfMonths`     | `1 \| 2`                                                 | `1`                            | Number of side-by-side month grids.                         |
 | `enableTime`         | `boolean`                                                | `false`                        | Enables the time picker panel.                              |
-| `timeValue`          | `JalaliTime`                                             | `undefined`                    | Controlled time-of-day value.                               |
+| `timeValue`          | `JalaliTime \| null`                                     | `undefined`                    | Controlled time-of-day value; `null` resolves to `00:00`.   |
+| `defaultTimeValue`   | `JalaliTime`                                             | date time / current time       | Initial uncontrolled time value.                            |
 | `onTimeChange`       | `(time: JalaliTime) => void`                             | `undefined`                    | Fires when the time changes.                                |
 | `hourStep`           | `number`                                                 | `1`                            | Hour increment step.                                        |
 | `minuteStep`         | `number`                                                 | `1`                            | Minute increment step.                                      |
+| `secondStep`         | `number`                                                 | `1`                            | Second increment step.                                      |
 | `showSeconds`        | `boolean`                                                | `false`                        | Show a seconds column in the time picker.                   |
 | `useMaskedInput`     | `boolean`                                                | `false`                        | Enables the live typing mask on the trigger input.          |
-| `maskFormat`         | `string`                                                 | `'YYYY/MM/DD'`                 | Mask pattern for `useMaskedInput`.                          |
-| `enablePresets`      | `boolean`                                                | `false`                        | Shows the presets bar.                                      |
-| `presetsOrientation` | `'horizontal' \| 'vertical'`                             | `'vertical'`                   | Presets bar layout.                                         |
-| `presets`            | `DatePickerPreset[]`                                     | `[]`                           | Custom preset definitions.                                  |
 | `showHolidays`       | `boolean`                                                | `false`                        | Highlights official holidays and Fridays.                   |
 | `customHolidays`     | `CustomHolidayRule[]`                                    | `[]`                           | Additional holiday rules to highlight.                      |
 | `events`             | `CalendarEvent[]`                                        | `[]`                           | Event dots/badges rendered on matching day cells.           |
@@ -468,39 +452,34 @@ function CustomCalendar() {
 | `showStatusText`     | `boolean`                                                | `true`                         | Shows the selection-summary text in the footer.             |
 | `showActions`        | `boolean`                                                | `true`                         | Shows Today/Clear/Confirm buttons in the footer.            |
 | `onConfirm`          | `(value) => void`                                        | `undefined`                    | Fires when Confirm is pressed.                              |
-| `placeholder`        | `string`                                                 | `''`                           | Placeholder text for the trigger input (`popover`/`modal`). |
-| `modalTitle`         | `string`                                                 | `undefined`                    | Title rendered in the `modal` variant's dialog header.      |
-| `disabled`           | `boolean`                                                | `false`                        | Disables the entire component.                              |
-| `readOnly`           | `boolean`                                                | `false`                        | Prevents changes while still allowing focus/scroll.         |
-| `classNames`         | `JalaliDatePickerClassNames`                             | `{}`                           | Per-slot Tailwind/CSS class overrides.                      |
-| `styles`             | `JalaliDatePickerStyles`                                 | `{}`                           | Per-slot inline style overrides.                            |
-| `locale`             | `'fa' \| 'en'`                                           | `'fa'`                         | Language for weekday/month labels and ARIA strings.         |
-| `weekStartsOn`       | `0 \| 1 \| ... \| 6`                                     | `6` (Saturday)                 | First day of the week in the grid.                          |
+| `placeholder`        | `string`                                                 | `'انتخاب تاریخ...'`            | Placeholder text for the trigger input (`popover`/`modal`). |
+| `closeOnOutsideClick`| `boolean`                                                | `true`                         | Closes popover/modal when its outside area is clicked.      |
+| `closeOnEscape`      | `boolean`                                                | `true`                         | Closes popover/modal when Escape is pressed.                |
+| `onOpenChange`       | `(open: boolean) => void`                                | `undefined`                    | Reports open-state changes.                                 |
+| `className` / `style`| `string` / `CSSProperties`                               | `undefined`                    | Root wrapper overrides.                                     |
+| `classNames`         | `DatePickerClassNames`                                   | `{}`                           | Per-slot class names.                                       |
+| `styles`             | `DatePickerStyles`                                       | `{}`                           | Per-slot inline style overrides.                            |
 
 ### Style slots (`classNames` & `styles`)
 
 Both `classNames` and `styles` accept the same set of slot keys, letting you target any part of the picker with Tailwind classes or inline styles respectively.
 
-| Slot key         | Targets                                                           |
-| ---------------- | ----------------------------------------------------------------- |
-| `root`           | Outermost wrapper element.                                        |
-| `input`          | The trigger text input (`popover`/`modal`).                       |
-| `calendar`       | The calendar panel container.                                     |
-| `header`         | Month/year navigation header.                                     |
-| `grid`           | The day-cell grid container.                                      |
-| `weekdays`       | The weekday label row.                                            |
-| `dayCell`        | An individual day cell (base state).                              |
-| `selectedCell`   | A cell that is part of the current selection.                     |
-| `todayCell`      | The cell representing today.                                      |
-| `holidayCell`    | A cell flagged as a holiday or Friday.                            |
-| `inRangeCell`    | A cell between the range start and end (inclusive-between).       |
-| `rangeStartCell` | The first cell of a range selection.                              |
-| `rangeEndCell`   | The last cell of a range selection.                               |
-| `disabledCell`   | A cell outside `minDate`/`maxDate` or matched by `disabledDates`. |
-| `footer`         | The footer row (status text + actions).                           |
-| `modalBackdrop`  | The backdrop overlay behind the `modal` variant.                  |
-| `presetsBar`     | The presets sidebar/bar container.                                |
-| `timePicker`     | The time picker panel.                                            |
+| Slot key | Targets |
+| -------- | ------- |
+| `root` | Outermost wrapper element. |
+| `input`, `inputWrapper`, `inputClearButton` | Trigger input and masked-input controls. |
+| `calendar`, `calendarBody`, `calendarPanes`, `calendarPane`, `paneDivider` | Calendar panel and one/two-month layout. |
+| `header`, `headerTitle`, `navButton` | Month/year header controls. |
+| `weekdays`, `weekdayCell`, `grid` | Weekday row and date grid. |
+| `dayCell`, `outsideMonthCell`, `todayCell`, `selectedCell`, `disabledCell`, `holidayCell` | Base and state-specific day cells. |
+| `rangeBetweenCell`, `rangeStartCell`, `rangeEndCell` | Range-selection states. |
+| `eventBadges`, `eventBadge` | Event indicator wrapper and dots. |
+| `monthYearPicker`, `yearList`, `yearButton`, `selectedYearButton` | Year picker elements. |
+| `monthGrid`, `monthButton`, `selectedMonthButton` | Month picker elements. |
+| `timePicker`, `timeLabel`, `timeControls`, `timeSelect`, `timeSeparator` | Time-picker elements. |
+| `footer`, `footerStatus`, `footerActions` | Footer layout and status. |
+| `todayButton`, `clearButton`, `confirmButton` | Footer action buttons. |
+| `modalBackdrop`, `closeButton` | Modal backdrop and close control. |
 
 ```tsx
 <JalaliDatePicker
@@ -523,9 +502,12 @@ export type SelectedDateValue =
   | [Date | null, Date | null]
   | Date[];
 
-export interface DateRange {
-  start: Date | null;
-  end: Date | null;
+export type DateRange = [Date | null, Date | null];
+
+export interface JalaliDate {
+  year: number;
+  month: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+  day: number;
 }
 
 export interface JalaliTime {
@@ -535,55 +517,34 @@ export interface JalaliTime {
 }
 
 export interface CalendarEvent {
-  date: Date;
+  id: string;
+  date: JalaliDate;
+  title: string;
+  description?: string;
   color?: string;
-  label?: string;
 }
 
 export interface CustomHolidayRule {
-  /** Jalali month, 1-indexed */
-  month: number;
-  /** Jalali day of month */
-  day: number;
-  label?: string;
+  date: JalaliDate;
+  title: string;
+  isOff?: boolean;
 }
 
-export interface DatePickerPreset {
-  label: string;
-  getValue: () => SelectedDateValue;
-}
-
-export interface CalendarCell {
-  key: string;
-  date: Date;
-  dayOfMonth: number;
+export interface JalaliCalendarCell {
+  jalali: JalaliDate;
+  gregorianDate: Date;
+  dayNumber: number;
   isCurrentMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  isDisabled: boolean;
+  isInRange?: boolean;
+  isRangeStart?: boolean;
+  isRangeEnd?: boolean;
 }
 
-export interface JalaliDatePickerClassNames {
-  root?: string;
-  input?: string;
-  calendar?: string;
-  header?: string;
-  grid?: string;
-  weekdays?: string;
-  dayCell?: string;
-  selectedCell?: string;
-  todayCell?: string;
-  holidayCell?: string;
-  inRangeCell?: string;
-  rangeStartCell?: string;
-  rangeEndCell?: string;
-  disabledCell?: string;
-  footer?: string;
-  modalBackdrop?: string;
-  presetsBar?: string;
-  timePicker?: string;
-}
-
-export type JalaliDatePickerStyles = {
-  [K in keyof JalaliDatePickerClassNames]?: React.CSSProperties;
-};
+export type DatePickerClassNames = DatePickerSlots<string>;
+export type DatePickerStyles = DatePickerSlots<React.CSSProperties>;
 ```
 
 ---
@@ -602,39 +563,39 @@ import { DatePickerThemeProvider } from "@mngh/jalali-datepicker";
 </DatePickerThemeProvider>;
 ```
 
-| Prop   | Type                | Default   | Description                         |
-| ------ | ------------------- | --------- | ----------------------------------- |
-| `mode` | `'light' \| 'dark'` | `'light'` | Sets the base CSS-variable palette. |
+| Prop          | Type                 | Default   | Description                              |
+| ------------- | -------------------- | --------- | ---------------------------------------- |
+| `mode`        | `'light' \| 'dark'`  | `'light'` | Selects the built-in color palette.      |
+| `customTheme` | `DeepPartial<Theme>` | `undefined` | Overrides colors, radii, or shadows.   |
 
-### CSS variables
+### Sizing variables
 
-Every visual token is exposed as a CSS custom property, so you can override the theme without touching class names:
+The root exposes three layout variables. Override them with `style` or `styles.root` to resize the date grid without breaking its column math:
 
 ```css
-:root {
-  --pdp-surface-bg: #ffffff;
-  --pdp-surface-border: #e5e7eb;
-  --pdp-text-primary: #111827;
-  --pdp-text-muted: #6b7280;
-  --pdp-accent: #2563eb;
-  --pdp-accent-contrast: #ffffff;
-  --pdp-holiday-color: #dc2626;
-  --pdp-cell-size: 2.25rem;
-  --pdp-radius: 0.5rem;
-  --pdp-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.15);
+.large-picker {
+  --pdp-cell-size: 42px;
+  --pdp-cell-gap: 5px;
+  --pdp-calendar-pane-width: 324px; /* 7 × 42 + 6 × 5 */
 }
+```
 
-.dark {
-  --pdp-surface-bg: #111827;
-  --pdp-surface-border: #1f2937;
-  --pdp-text-primary: #f9fafb;
-  --pdp-text-muted: #9ca3af;
-}
+Use `customTheme` for palette changes:
+
+```tsx
+<DatePickerThemeProvider
+  customTheme={{
+    colors: { primary: "#0f766e", primaryHover: "#115e59" },
+    radii: { lg: "12px" },
+  }}
+>
+  <JalaliDatePicker className="large-picker" />
+</DatePickerThemeProvider>
 ```
 
 ### Tailwind CSS via `classNames`
 
-Because every slot accepts a plain class string, Tailwind utility classes compose directly with the component's own styling — no CSS-in-JS, no `!important` fights:
+Every meaningful element has a class slot for Tailwind or regular CSS. Built-in defaults are inline styles, so use `styles` when overriding the same CSS property; use `classNames` for selectors, states, and properties not already set inline.
 
 ```tsx
 <JalaliDatePicker
@@ -651,20 +612,19 @@ Because every slot accepts a plain class string, Tailwind utility classes compos
 
 ## 8. Accessibility & Keyboard Shortcuts
 
-The calendar grid uses `role="grid"` / `role="gridcell"` with a roving `tabindex`, and the popover/modal triggers manage focus trapping and restoration automatically.
+The calendar grid uses `role="grid"` / `role="gridcell"` with a roving `tabindex`. Escape closes popover/modal variants and restores focus to the trigger.
 
 | Key                                 | Action                                                                                                   |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `Arrow Left` / `Arrow Right`        | Move focus one day (respects `locale` direction — RTL for `fa`).                                         |
+| `Arrow Left` / `Arrow Right`        | Move focus one day (respects the `direction` prop).                                                       |
 | `Arrow Up` / `Arrow Down`           | Move focus one week.                                                                                     |
 | `Page Up` / `Page Down`             | Move focus to the same day in the previous/next month.                                                   |
-| `Alt + Page Up` / `Alt + Page Down` | Move focus to the same day in the previous/next year.                                                    |
-| `Home`                              | Move focus to the first day of the current week.                                                         |
-| `End`                               | Move focus to the last day of the current week.                                                          |
+| `Home`                              | Move focus to the first day of the current month.                                                        |
+| `End`                               | Move focus to the last day of the current month.                                                         |
 | `Enter` / `Space`                   | Select the focused date.                                                                                 |
 | `Escape`                            | Close the `popover` or `modal` panel and return focus to the trigger.                                    |
-| `Tab` / `Shift + Tab`               | Move focus between the trigger, calendar, presets bar, time picker, and footer actions, in visual order. |
+| `Tab` / `Shift + Tab`               | Move focus through the available controls in document order.                                            |
 
-> **Note:** When `locale="fa"`, the calendar grid renders right-to-left and `Arrow Left`/`Arrow Right` are swapped automatically so that "left" and "right" continue to match the visual direction of travel.
+> **Note:** With `direction="rtl"`, `Arrow Left`/`Arrow Right` are swapped automatically so the keys match visual travel.
 
 > **Tip:** `modal` variant applies `aria-modal="true"` and `role="dialog"`, and locks background scroll via a `overflow: hidden` toggle on `<body>` while open.

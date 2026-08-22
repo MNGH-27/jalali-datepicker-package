@@ -45,4 +45,10 @@ export interface MaskedDateInputProps extends Omit<
   isDateDisabled?: (date: JalaliDate) => boolean;
   /** Whether the input allows a clear button (X icon). */
   clearable?: boolean;
+  /** Layout direction. */
+  direction?: "rtl" | "ltr";
+  wrapperClassName?: string;
+  wrapperStyle?: React.CSSProperties;
+  clearButtonClassName?: string;
+  clearButtonStyle?: React.CSSProperties;
 }

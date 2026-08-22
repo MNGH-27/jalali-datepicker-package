@@ -16,6 +16,8 @@ import { PERSIAN_MONTH_NAMES } from "../../core/constants";
 import { toPersianDigits } from "../../formatters/persian-digits";
 import { Weekdays } from "../Weekdays";
 import { DayCell } from "../DayCell";
+import { useTheme } from "../../theme/ThemeProvider";
+import { mergeClassNames } from "../../theme/style-utils";
 
 export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
   value,
@@ -27,7 +29,13 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
   minDate,
   maxDate,
   isDateDisabled,
+  direction = "rtl",
+  className,
+  style,
+  classNames,
+  styles,
 }) => {
+  const { theme } = useTheme();
   // 1. Selection State (Controlled vs Uncontrolled)
   const [internalRange, setInternalRange] =
     useState<JalaliDateRange>(defaultValue);
@@ -35,6 +43,8 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
 
   // 2. Hover state for range preview
   const [hoveredDate, setHoveredDate] = useState<JalaliDate | null>(null);
+  const formatNumber = (value: number) =>
+    digitType === "persian" ? toPersianDigits(value) : String(value);
 
   // 3. View state for First Month (Left)
   const today = useMemo(() => getTodayJalali(), []);
@@ -164,21 +174,27 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
     isLeftPane: boolean,
   ) => (
     <div
+      dir={direction}
+      className={classNames?.calendarPane}
       style={{
         display: "flex",
         flexDirection: "column",
         gap: "8px",
-        minWidth: "270px",
+        width: "var(--pdp-calendar-pane-width, 276px)",
+        minWidth: "var(--pdp-calendar-pane-width, 276px)",
+        ...styles?.calendarPane,
       }}
     >
       {/* Pane Header */}
       <div
+        className={classNames?.header}
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           padding: "0 4px",
           height: "32px",
+          ...styles?.header,
         }}
       >
         {isLeftPane ? (
@@ -186,17 +202,19 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
             type="button"
             aria-label="ماه قبل"
             onClick={handlePrevMonth}
+            className={classNames?.navButton}
             style={{
               width: "28px",
               height: "28px",
               borderRadius: "6px",
-              border: "1px solid var(--pdp-surface-border, #e2e8f0)",
-              backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-              color: "var(--pdp-text-primary, #0f172a)",
+              border: `1px solid ${theme.colors.border}`,
+              backgroundColor: theme.colors.background,
+              color: theme.colors.textPrimary,
               cursor: "pointer",
+              ...styles?.navButton,
             }}
           >
-            ›
+            {direction === "rtl" ? "›" : "‹"}
           </button>
         ) : (
           <div style={{ width: "28px" }} />
@@ -206,10 +224,10 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
           style={{
             fontWeight: 600,
             fontSize: "14px",
-            color: "var(--pdp-text-primary, #0f172a)",
+            color: theme.colors.textPrimary,
           }}
         >
-          {PERSIAN_MONTH_NAMES[month]} {toPersianDigits(year)}
+          {PERSIAN_MONTH_NAMES[month]} {formatNumber(year)}
         </div>
 
         {!isLeftPane ? (
@@ -217,40 +235,53 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
             type="button"
             aria-label="ماه بعد"
             onClick={handleNextMonth}
+            className={classNames?.navButton}
             style={{
               width: "28px",
               height: "28px",
               borderRadius: "6px",
-              border: "1px solid var(--pdp-surface-border, #e2e8f0)",
-              backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-              color: "var(--pdp-text-primary, #0f172a)",
+              border: `1px solid ${theme.colors.border}`,
+              backgroundColor: theme.colors.background,
+              color: theme.colors.textPrimary,
               cursor: "pointer",
+              ...styles?.navButton,
             }}
           >
-            ‹
+            {direction === "rtl" ? "‹" : "›"}
           </button>
         ) : (
           <div style={{ width: "28px" }} />
         )}
       </div>
 
-      <Weekdays firstDayOfWeek={firstDayOfWeek} />
+      <Weekdays
+        firstDayOfWeek={firstDayOfWeek}
+        direction={direction}
+        classNames={classNames}
+        styles={styles}
+      />
 
       {/* Grid */}
       <div
         role="grid"
-        aria-label={`${PERSIAN_MONTH_NAMES[month]} ${toPersianDigits(year)}`}
+        aria-label={`${PERSIAN_MONTH_NAMES[month]} ${formatNumber(year)}`}
+        dir={direction}
+        className={classNames?.grid}
         style={{
           display: "grid",
+          width: "var(--pdp-calendar-pane-width, 276px)",
           gridTemplateColumns: "repeat(7, var(--pdp-cell-size, 36px))",
-          gap: "4px",
+          gap: "var(--pdp-cell-gap, 4px)",
+          ...styles?.grid,
         }}
       >
-        {grid.map((cell, idx) => (
+        {grid.map((cell) => (
           <DayCell
-            key={idx}
+            key={`${cell.jalali.year}-${cell.jalali.month}-${cell.jalali.day}`}
             cell={cell}
             digitType={digitType}
+            classNames={classNames}
+            styles={styles}
             tabIndex={0}
             onSelect={handleDateSelect}
             onHover={setHoveredDate}
@@ -264,24 +295,33 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
     <div
       role="region"
       aria-label="تقویم دوقلو شمسی"
+      dir={direction}
+      className={mergeClassNames(className, classNames?.calendar)}
       style={{
+        "--pdp-cell-size": "36px",
+        "--pdp-cell-gap": "4px",
+        "--pdp-calendar-pane-width": "276px",
         display: "flex",
         flexWrap: "wrap",
         gap: "24px",
         padding: "16px",
-        backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-        borderRadius: "var(--pdp-border-radius, 8px)",
-        border: "1px solid var(--pdp-surface-border, #e2e8f0)",
-        boxShadow: "var(--pdp-shadow)",
+        backgroundColor: theme.colors.background,
+        color: theme.colors.textPrimary,
+        borderRadius: theme.radii.lg,
+        border: `1px solid ${theme.colors.border}`,
+        boxShadow: theme.shadows.lg,
         width: "fit-content",
-        direction: "rtl",
-      }}
+        ...style,
+        ...styles?.calendar,
+      } as React.CSSProperties}
     >
       {renderMonthPane(viewState.year, viewState.month, leftGrid, true)}
       <div
+        className={classNames?.paneDivider}
         style={{
           width: "1px",
-          backgroundColor: "var(--pdp-surface-border, #e2e8f0)",
+          backgroundColor: theme.colors.border,
+          ...styles?.paneDivider,
         }}
       />
       {renderMonthPane(

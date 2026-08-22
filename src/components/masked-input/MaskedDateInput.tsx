@@ -3,6 +3,7 @@ import type { MaskedDateInputProps, DateValidationError } from "./types";
 import { applyDateMask, parseAndValidateJalaliString } from "./mask-utils";
 import { formatJalaliDate } from "../../formatters/jalali-formatter";
 import type { JalaliDate } from "../../core/types";
+import { useTheme } from "../../theme/ThemeProvider";
 
 export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
   value,
@@ -16,9 +17,15 @@ export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
   clearable = true,
   placeholder = "۱۴۰۵/۰۱/۱۵",
   disabled = false,
+  direction = "rtl",
+  wrapperClassName,
+  wrapperStyle,
+  clearButtonClassName,
+  clearButtonStyle,
   style,
   ...restProps
 }) => {
+  const { theme } = useTheme();
   const [internalValue, setInternalValue] = useState<JalaliDate | null>(
     defaultValue,
   );
@@ -88,11 +95,13 @@ export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
 
   return (
     <div
+      dir={direction}
+      className={wrapperClassName}
       style={{
         position: "relative",
         display: "inline-flex",
         alignItems: "center",
-        direction: "rtl",
+        ...wrapperStyle,
       }}
     >
       <input
@@ -106,14 +115,14 @@ export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
         style={{
           width: "180px",
           padding: "8px 12px",
-          paddingLeft: clearable && text ? "32px" : "12px",
-          borderRadius: "var(--pdp-border-radius, 8px)",
-          border: `1px solid ${hasError ? "#ef4444" : "var(--pdp-surface-border, #e2e8f0)"}`,
-          backgroundColor: "var(--pdp-surface-bg, #ffffff)",
-          color: "var(--pdp-text-primary, #0f172a)",
+          paddingInlineEnd: clearable && text ? "32px" : "12px",
+          borderRadius: theme.radii.sm,
+          border: `1px solid ${hasError ? theme.colors.holiday : theme.colors.border}`,
+          backgroundColor: theme.colors.background,
+          color: theme.colors.textPrimary,
           fontSize: "14px",
           fontFamily: "inherit",
-          outline: "none",
+          outlineColor: theme.colors.primary,
           textAlign: "center",
           letterSpacing: "1px",
           transition: "border-color 0.15s ease",
@@ -128,19 +137,21 @@ export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
           type="button"
           aria-label="پاک کردن"
           onClick={handleClear}
+          className={clearButtonClassName}
           style={{
             position: "absolute",
-            left: "8px",
+            insetInlineEnd: "8px",
             background: "none",
             border: "none",
             cursor: "pointer",
-            color: "var(--pdp-text-muted, #94a3b8)",
+            color: theme.colors.textSecondary,
             fontSize: "14px",
             lineHeight: 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             padding: "2px",
+            ...clearButtonStyle,
           }}
         >
           ✕
