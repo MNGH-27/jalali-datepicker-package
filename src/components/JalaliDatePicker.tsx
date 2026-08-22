@@ -121,7 +121,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const containerRef = useRef<HTMLDivElement>(null);
   const isModal = variant === "modal";
 
-  // استخراج زمان از ورودی در صورت پاس داده شدن Date اولیه
+  // استخراج زمان اولیه
   const initialTime = useMemo<JalaliTime>(() => {
     if (defaultTimeValue) return defaultTimeValue;
     if (value instanceof Date) {
@@ -141,12 +141,11 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     return getCurrentTime();
   }, [defaultTimeValue, value, defaultValue]);
 
-  // مدیریت استیت زمان
   const [internalTime, setInternalTime] = useState<JalaliTime>(initialTime);
   const activeTime =
     timeValue !== undefined ? (timeValue ?? getCurrentTime()) : internalTime;
 
-  // بستن پاپ‌اور با کلیک بیرون
+  // بستن منو با کلیک خارج
   useEffect(() => {
     if (variant === "inline" || !isOpen) return;
 
@@ -169,7 +168,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     };
   }, [variant, isOpen]);
 
-  // تبدیل Date ورودی به فرمت داخلی جلالی
+  // مقادیر جلالی
   const internalJalaliValue = useMemo<
     InternalSelectedValue<M> | undefined
   >(() => {
@@ -229,7 +228,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     [maxDate],
   );
 
-  // تابع تبدیل جلالی به آبجکت Date واقعی همراه با ساعت و دقیقه
   const convertJalaliToDateOutput = useCallback(
     (
       jVal: InternalSelectedValue<M>,
@@ -298,7 +296,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     },
   });
 
-  // هندلر تغییر ساعت (آبجکت Date خروجی را با ساعت جدید مجدداً منتشر می‌کند)
   const handleTimeChange = useCallback(
     (newTime: JalaliTime) => {
       if (timeValue === undefined) setInternalTime(newTime);
@@ -336,7 +333,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       isRtl: true,
     });
 
-  // Modal Escape Key Support
+  // کلید Escape در مودال
   useEffect(() => {
     if (!isModal || !isOpen) return;
     const originalOverflow = document.body.style.overflow;
@@ -446,7 +443,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     showPrevArrow = true,
     showNextArrow = true,
   ) => (
-    <div style={{ minWidth: "260px", flex: "1 1 260px" }}>
+    <div style={{ width: "260px", flexShrink: 0 }}>
       <Header
         year={y}
         monthName={PERSIAN_MONTH_NAMES[m]}
@@ -525,7 +522,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         boxShadow: isModal
           ? "0 20px 25px -5px rgb(0 0 0 / 0.3)"
           : "var(--pdp-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1))",
-        width: "fit-content",
+        width: numberOfMonths === 2 ? "fit-content" : "auto",
+        minWidth: numberOfMonths === 2 ? "560px" : "284px",
         maxWidth: "95vw",
         userSelect: "none",
         display: "flex",
@@ -686,7 +684,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               }}
             />
 
-            {/* دکمه پاک کردن در سمت راست اینپوت LTR */}
+            {/* دکمه Clear */}
             {allowClear && hasValue && (
               <button
                 type="button"

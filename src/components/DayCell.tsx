@@ -1,197 +1,243 @@
+// src/components/DayCell.tsx
 import React, { useState } from "react";
-import { PERSIAN_MONTH_NAMES } from "../core/constants";
 import type { JalaliCalendarCell, JalaliDate } from "../core/types";
+import { toPersianDigits, toLatinDigits } from "../formatters/persian-digits";
 import type { CalendarEvent } from "../events/types";
-import { toPersianDigits } from "../formatters/persian-digits";
 import type {
   DatePickerClassNames,
   DatePickerStyles,
 } from "../theme/style-slots";
-import { mergeClassNames } from "../theme/style-utils";
-import { useTheme } from "../theme/ThemeProvider";
 
 export interface DayCellProps {
-  cell?: JalaliCalendarCell;
-  day?: number;
-  isCurrentMonth?: boolean;
-  isSelected?: boolean;
-  isToday?: boolean;
+  cell: JalaliCalendarCell;
+  digitType?: "persian" | "latin";
   isHoliday?: boolean;
-  isInRange?: boolean;
-  isRangeStart?: boolean;
-  isRangeEnd?: boolean;
-  disabled?: boolean;
   holidayTitle?: string;
   events?: CalendarEvent[];
-  digitType?: "persian" | "latin";
   tabIndex?: number;
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;
-  onSelect?: (target: JalaliDate) => void;
-  onHover?: (target: JalaliDate | null) => void;
-  onFocus?: (target: JalaliDate) => void;
-  onClick?: () => void;
+  onSelect: (date: JalaliDate) => void;
+  onHover?: (date: JalaliDate | null) => void;
+  onFocus?: (date: JalaliDate) => void;
 }
 
-export const DayCell: React.FC<DayCellProps> = (props) => {
-  const { theme } = useTheme();
+export const DayCell: React.FC<DayCellProps> = ({
+  cell,
+  digitType = "persian",
+  isHoliday = false,
+  holidayTitle,
+  events = [],
+  tabIndex = -1,
+  classNames,
+  styles,
+  onSelect,
+  onHover,
+  onFocus,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
+  const {
+    jalali,
+    dayNumber,
+    isCurrentMonth,
+    isToday,
+    isSelected,
+    isDisabled,
+    isInRange,
+    isRangeStart,
+    isRangeEnd,
+  } = cell;
 
-  const cell = props.cell;
-  const jalaliDate: JalaliDate = cell?.jalali ?? {
-    year: 1403,
-    month: 0,
-    day: props.day ?? 1,
+  const formattedDay =
+    digitType === "persian"
+      ? toPersianDigits(dayNumber)
+      : toLatinDigits(dayNumber.toString());
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isDisabled && isCurrentMonth) {
+      onSelect(jalali);
+    }
   };
-  const isCurrentMonth = cell?.isCurrentMonth ?? props.isCurrentMonth ?? true;
-  const isSelected = cell?.isSelected ?? props.isSelected ?? false;
-  const isToday = cell?.isToday ?? props.isToday ?? false;
-  const isHoliday = props.isHoliday ?? false;
-  const isInRange = cell?.isInRange ?? props.isInRange ?? false;
-  const isRangeStart = cell?.isRangeStart ?? props.isRangeStart ?? false;
-  const isRangeEnd = cell?.isRangeEnd ?? props.isRangeEnd ?? false;
-  const disabled = cell?.isDisabled ?? props.disabled ?? false;
-  const isUnavailable = disabled || !isCurrentMonth;
-  const isRangeEdge = isRangeStart || isRangeEnd;
-  const isActivelySelected = isSelected || isRangeEdge;
-  const displayNumber =
-    props.digitType === "latin"
-      ? String(jalaliDate.day)
-      : toPersianDigits(jalaliDate.day);
-  const displayYear =
-    props.digitType === "latin"
-      ? String(jalaliDate.year)
-      : toPersianDigits(jalaliDate.year);
 
-  let backgroundColor = "transparent";
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (!isDisabled && isCurrentMonth && onHover) {
+      onHover(jalali);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (onHover) {
+      onHover(null);
+    }
+  };
+
+  const handleFocus = () => {
+    if (!isDisabled && isCurrentMonth && onFocus) {
+      onFocus(jalali);
+    }
+  };
+
+  // Cell Background Logic
+  let cellBg = "transparent";
   let textColor = isCurrentMonth
-    ? theme.colors.textPrimary
-    : theme.colors.textDisabled;
+    ? "var(--pdp-text-primary, #0f172a)"
+    : "var(--pdp-text-disabled, #cbd5e1)";
 
-  if (isInRange && isCurrentMonth) {
-    backgroundColor = theme.colors.rangeBackground;
-    textColor = theme.colors.textPrimary;
-  }
-  if (isHoliday && isCurrentMonth) textColor = theme.colors.holiday;
-  if (isHovered && !isActivelySelected && !isUnavailable) {
-    backgroundColor = isHoliday
-      ? theme.colors.holidayBackground
-      : theme.colors.backgroundHover;
-  }
-  if (isActivelySelected) {
-    backgroundColor = theme.colors.primary;
-    textColor = theme.colors.primaryText;
+  if (isSelected || isRangeStart || isRangeEnd) {
+    cellBg = "var(--pdp-primary, #4f46e5)";
+    textColor = "#ffffff";
+  } else if (isInRange) {
+    cellBg = "var(--pdp-range-between-bg, rgba(79, 70, 229, 0.12))";
   }
 
-  const accessibleDetails = [
-    `${displayNumber} ${PERSIAN_MONTH_NAMES[jalaliDate.month]} ${displayYear}`,
-    props.holidayTitle,
-    ...(props.events?.map((event) => event.title) ?? []),
-  ].filter(Boolean);
-
-  const handleClick = () => {
-    if (isUnavailable) return;
-    props.onClick?.();
-    props.onSelect?.(jalaliDate);
-  };
+  // Holiday styling (if not selected)
+  if (
+    isHoliday &&
+    isCurrentMonth &&
+    !isSelected &&
+    !isRangeStart &&
+    !isRangeEnd
+  ) {
+    textColor = "var(--pdp-holiday-color, #e11d48)";
+  }
 
   return (
-    <button
-      type="button"
-      role="gridcell"
-      aria-label={accessibleDetails.join("، ")}
-      aria-selected={isActivelySelected}
-      tabIndex={props.tabIndex ?? 0}
-      disabled={isUnavailable}
-      title={accessibleDetails.slice(1).join(" — ") || undefined}
-      onClick={handleClick}
-      onFocus={() => props.onFocus?.(jalaliDate)}
-      className={mergeClassNames(
-        props.classNames?.dayCell,
-        !isCurrentMonth && props.classNames?.outsideMonthCell,
-        isToday && props.classNames?.todayCell,
-        isSelected && props.classNames?.selectedCell,
-        isInRange && props.classNames?.rangeBetweenCell,
-        isRangeStart && props.classNames?.rangeStartCell,
-        isRangeEnd && props.classNames?.rangeEndCell,
-        disabled && props.classNames?.disabledCell,
-        isHoliday && props.classNames?.holidayCell,
-      )}
+    <div
       style={{
         position: "relative",
-        width: "var(--pdp-cell-size, 36px)",
-        height: "var(--pdp-cell-size, 36px)",
-        padding: 0,
-        border:
-          isToday && !isActivelySelected
-            ? `1.5px solid ${theme.colors.todayBorder}`
-            : "1px solid transparent",
-        borderRadius: theme.radii.md,
-        backgroundColor,
-        color: textColor,
-        cursor: isUnavailable ? "default" : "pointer",
-        display: "inline-flex",
+        display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: "0.85rem",
-        fontWeight: isActivelySelected || isToday ? 700 : 500,
-        lineHeight: 1,
-        opacity: !isCurrentMonth ? 0.42 : disabled ? 0.5 : 1,
-        transform:
-          isHovered && !isActivelySelected && !isUnavailable
-            ? "scale(1.04)"
-            : "scale(1)",
-        transition:
-          "background-color 0.15s ease, color 0.15s ease, transform 0.15s ease",
-        ...props.styles?.dayCell,
-        ...(!isCurrentMonth ? props.styles?.outsideMonthCell : undefined),
-        ...(isToday ? props.styles?.todayCell : undefined),
-        ...(isInRange ? props.styles?.rangeBetweenCell : undefined),
-        ...(isSelected ? props.styles?.selectedCell : undefined),
-        ...(isRangeStart ? props.styles?.rangeStartCell : undefined),
-        ...(isRangeEnd ? props.styles?.rangeEndCell : undefined),
-        ...(disabled ? props.styles?.disabledCell : undefined),
-        ...(isHoliday ? props.styles?.holidayCell : undefined),
+        width: "var(--pdp-cell-size, 34px)",
+        height: "var(--pdp-cell-size, 34px)",
       }}
-      onMouseEnter={() => {
-        setIsHovered(true);
-        props.onHover?.(jalaliDate);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        props.onHover?.(null);
-      }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
-      <span aria-hidden="true">{displayNumber}</span>
-      {Boolean(props.events?.length) && (
-        <span
-          aria-hidden="true"
-          className={props.classNames?.eventBadges}
+      <button
+        type="button"
+        role="gridcell"
+        tabIndex={tabIndex}
+        disabled={isDisabled || !isCurrentMonth}
+        aria-selected={isSelected}
+        aria-label={`${jalali.year}/${jalali.month + 1}/${jalali.day}${holidayTitle ? ` - ${holidayTitle}` : ""}`}
+        onClick={handleClick}
+        onFocus={handleFocus}
+        className={classNames?.dayCell}
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: isRangeStart
+            ? "0 8px 8px 0"
+            : isRangeEnd
+              ? "8px 0 0 8px"
+              : isInRange
+                ? "0"
+                : "8px",
+          border:
+            isToday && !isSelected
+              ? "1px solid var(--pdp-primary, #4f46e5)"
+              : "none",
+          backgroundColor: cellBg,
+          color: textColor,
+          cursor: isDisabled || !isCurrentMonth ? "default" : "pointer",
+          fontSize: "13px",
+          fontWeight: isSelected || isToday ? 700 : 500,
+          outline: "none",
+          transition: "all 0.12s ease",
+          position: "relative",
+          padding: 0,
+          ...styles?.dayCell,
+        }}
+      >
+        <span>{formattedDay}</span>
+
+        {/* Event Dots */}
+        {events.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "3px",
+              display: "flex",
+              gap: "2px",
+              alignItems: "center",
+            }}
+          >
+            {events.slice(0, 3).map((ev) => (
+              <span
+                key={ev.id}
+                style={{
+                  width: "3.5px",
+                  height: "3.5px",
+                  borderRadius: "50%",
+                  backgroundColor: isSelected
+                    ? "#ffffff"
+                    : ev.color || "var(--pdp-primary, #4f46e5)",
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </button>
+
+      {/* Modern Popover / Tooltip on Hover */}
+      {isHovered && isCurrentMonth && (isHoliday || events.length > 0) && (
+        <div
+          role="tooltip"
           style={{
             position: "absolute",
-            insetInline: "3px",
-            bottom: "2px",
+            bottom: "calc(100% + 6px)",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1050,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            backgroundColor: "var(--pdp-tooltip-bg, #0f172a)",
+            color: "var(--pdp-tooltip-text, #ffffff)",
+            padding: "5px 9px",
+            borderRadius: "6px",
+            fontSize: "11.5px",
+            fontWeight: 600,
+            lineHeight: 1.3,
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.25)",
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
             gap: "2px",
-            ...props.styles?.eventBadges,
+            textAlign: "center",
           }}
         >
-          {props.events?.slice(0, 3).map((event) => (
-            <span
-              key={event.id}
-              className={props.classNames?.eventBadge}
-              style={{
-                width: "4px",
-                height: "4px",
-                borderRadius: "50%",
-                backgroundColor: event.color ?? theme.colors.primary,
-                ...props.styles?.eventBadge,
-              }}
-            />
+          {isHoliday && holidayTitle && (
+            <span style={{ color: "#fda4af" }}>{holidayTitle}</span>
+          )}
+
+          {events.map((ev) => (
+            <span key={ev.id} style={{ color: "#e2e8f0" }}>
+              • {ev.title}
+            </span>
           ))}
-        </span>
+
+          {/* Tooltip Arrow */}
+          <div
+            style={{
+              position: "absolute",
+              top: "100%",
+              left: "50%",
+              transform: "translateX(-50%)",
+              borderWidth: "4px",
+              borderStyle: "solid",
+              borderColor:
+                "var(--pdp-tooltip-bg, #0f172a) transparent transparent transparent",
+            }}
+          />
+        </div>
       )}
-    </button>
+    </div>
   );
 };

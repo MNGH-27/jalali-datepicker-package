@@ -39,3 +39,6 @@ export * from "./plugins/time-picker";
 
 // --- Events ---
 export * from "./events";
+
+// --- Holidays ---
+export * from "./holidays";
