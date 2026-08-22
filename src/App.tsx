@@ -54,14 +54,20 @@ export function App() {
   const [newEventDay, setNewEventDay] = useState(15);
   const [newEventColor, setNewEventColor] = useState("#10b981");
 
-  // Custom Holiday Rule
-  const [customHolidays] = useState<CustomHolidayRule[]>([
+  // Custom Holidays State
+  const [customHolidays, setCustomHolidays] = useState<CustomHolidayRule[]>([
     {
       date: { year: 1405, month: 5, day: 1 },
-      title: "Company Anniversary",
+      title: "Company Anniversary (سالروز تاسیس شرکت)",
       isOff: true,
     },
   ]);
+
+  // Form State for adding custom holiday
+  const [newHolidayTitle, setNewHolidayTitle] = useState("");
+  const [newHolidayYear, setNewHolidayYear] = useState(1405);
+  const [newHolidayMonth, setNewHolidayMonth] = useState(5);
+  const [newHolidayDay, setNewHolidayDay] = useState(8);
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +90,28 @@ export function App() {
 
   const handleRemoveEvent = (id: string) => {
     setEvents((prev) => prev.filter((ev) => ev.id !== id));
+  };
+
+  const handleAddHoliday = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newHolidayTitle.trim()) return;
+
+    const newHol: CustomHolidayRule = {
+      title: newHolidayTitle.trim(),
+      date: {
+        year: Number(newHolidayYear),
+        month: Number(newHolidayMonth) as CustomHolidayRule["date"]["month"],
+        day: Number(newHolidayDay),
+      },
+      isOff: true,
+    };
+
+    setCustomHolidays((prev) => [...prev, newHol]);
+    setNewHolidayTitle("");
+  };
+
+  const handleRemoveHoliday = (index: number) => {
+    setCustomHolidays((prev) => prev.filter((_, i) => i !== index));
   };
 
   const currentValue =
@@ -174,11 +202,11 @@ export function App() {
             boxSizing: "border-box",
           }}
         >
-          {/* Left Column: Config Panel & Event Creator */}
+          {/* Left Column: Playground Controls & Managers */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "20px" }}
           >
-            {/* Props Config */}
+            {/* Props Configuration */}
             <section
               style={{
                 backgroundColor: cardBg,
@@ -194,7 +222,7 @@ export function App() {
                 ⚙️ Props Configuration
               </h2>
 
-              {/* Mode Selection */}
+              {/* Selection Mode */}
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
@@ -255,7 +283,7 @@ export function App() {
                 </div>
               </div>
 
-              {/* Digit Type & Dual Calendar */}
+              {/* Digits & Dual Calendar */}
               <div
                 style={{
                   display: "grid",
@@ -413,6 +441,184 @@ export function App() {
                   />
                   Show Footer (`showFooter`)
                 </label>
+              </div>
+            </section>
+
+            {/* Custom Holidays Manager */}
+            <section
+              style={{
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+              }}
+            >
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  color: "#e11d48",
+                }}
+              >
+                🎉 Custom Holidays
+              </h2>
+
+              <form
+                onSubmit={handleAddHoliday}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Holiday title (e.g. Branch Launch)"
+                  value={newHolidayTitle}
+                  onChange={(e) => setNewHolidayTitle(e.target.value)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "6px",
+                    border: `1px solid ${borderColor}`,
+                    backgroundColor: isDark ? "#0f172a" : "#fff",
+                    color: textColor,
+                    fontSize: "13px",
+                  }}
+                />
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr",
+                    gap: "6px",
+                  }}
+                >
+                  <input
+                    type="number"
+                    placeholder="Year"
+                    value={newHolidayYear}
+                    onChange={(e) => setNewHolidayYear(Number(e.target.value))}
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                      fontSize: "12px",
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Month (0-11)"
+                    min={0}
+                    max={11}
+                    value={newHolidayMonth}
+                    onChange={(e) => setNewHolidayMonth(Number(e.target.value))}
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                      fontSize: "12px",
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Day"
+                    min={1}
+                    max={31}
+                    value={newHolidayDay}
+                    onChange={(e) => setNewHolidayDay(Number(e.target.value))}
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                      fontSize: "12px",
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "none",
+                    backgroundColor: "#e11d48",
+                    color: "#fff",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  + Add Custom Holiday
+                </button>
+              </form>
+
+              {/* Holiday List */}
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  maxHeight: "140px",
+                  overflowY: "auto",
+                }}
+              >
+                {customHolidays.map((h, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      backgroundColor: isDark ? "#090d16" : "#fff1f2",
+                      border: "1px solid #fecdd3",
+                      fontSize: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <span style={{ color: "#e11d48", fontWeight: 600 }}>
+                        🚩 {h.title}
+                      </span>
+                      <span
+                        style={{
+                          color: isDark ? "#fda4af" : "#be123c",
+                          fontSize: "11px",
+                        }}
+                      >
+                        ({h.date.year}/{h.date.month + 1}/{h.date.day})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveHoliday(idx)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#ef4444",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
             </section>
 
@@ -607,11 +813,10 @@ export function App() {
             </section>
           </div>
 
-          {/* Right Column: Live Interactive Preview & Inspector */}
+          {/* Right Column: Live Component Preview & Inspector */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "24px" }}
           >
-            {/* Live Component Card */}
             <section
               style={{
                 backgroundColor: cardBg,
