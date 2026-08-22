@@ -121,7 +121,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const containerRef = useRef<HTMLDivElement>(null);
   const isModal = variant === "modal";
 
-  // استخراج زمان اولیه
   const initialTime = useMemo<JalaliTime>(() => {
     if (defaultTimeValue) return defaultTimeValue;
     if (value instanceof Date) {
@@ -145,7 +144,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const activeTime =
     timeValue !== undefined ? (timeValue ?? getCurrentTime()) : internalTime;
 
-  // بستن منو با کلیک خارج
   useEffect(() => {
     if (variant === "inline" || !isOpen) return;
 
@@ -168,7 +166,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     };
   }, [variant, isOpen]);
 
-  // مقادیر جلالی
   const internalJalaliValue = useMemo<
     InternalSelectedValue<M> | undefined
   >(() => {
@@ -333,7 +330,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       isRtl: true,
     });
 
-  // کلید Escape در مودال
   useEffect(() => {
     if (!isModal || !isOpen) return;
     const originalOverflow = document.body.style.overflow;
@@ -443,7 +439,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     showPrevArrow = true,
     showNextArrow = true,
   ) => (
-    <div style={{ width: "260px", flexShrink: 0 }}>
+    <div style={{ width: "262px", flexShrink: 0 }}>
       <Header
         year={y}
         monthName={PERSIAN_MONTH_NAMES[m]}
@@ -522,9 +518,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         boxShadow: isModal
           ? "0 20px 25px -5px rgb(0 0 0 / 0.3)"
           : "var(--pdp-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.1))",
-        width: numberOfMonths === 2 ? "fit-content" : "auto",
-        minWidth: numberOfMonths === 2 ? "560px" : "284px",
-        maxWidth: "95vw",
+        width: "max-content",
         userSelect: "none",
         display: "flex",
         flexDirection: "column",
@@ -548,11 +542,13 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         />
       ) : (
         <>
+          {/* Calendar Panes Container: No wrap under any condition */}
           <div
             style={{
               display: "flex",
-              flexWrap: "wrap",
-              gap: "16px",
+              flexDirection: "row",
+              flexWrap: "nowrap",
+              gap: "20px",
               alignItems: "flex-start",
               justifyContent: "center",
             }}
@@ -567,6 +563,14 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
 
             {numberOfMonths === 2 && (
               <>
+                <div
+                  style={{
+                    width: "1px",
+                    alignSelf: "stretch",
+                    backgroundColor: "var(--pdp-surface-border, #e2e8f0)",
+                    margin: "0 2px",
+                  }}
+                />
                 {renderCalendarPane(
                   nextMonthState.year,
                   nextMonthState.month,
@@ -684,7 +688,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               }}
             />
 
-            {/* دکمه Clear */}
             {allowClear && hasValue && (
               <button
                 type="button"
