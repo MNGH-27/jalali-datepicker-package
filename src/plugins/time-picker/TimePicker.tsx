@@ -1,136 +1,245 @@
 // src/plugins/time-picker/TimePicker.tsx
-import React from 'react';
-import type { JalaliTime } from './types';
-import type { DatePickerClassNames, DatePickerStyles } from '../../theme/style-slots';
+import React, { useState, useRef, useEffect } from "react";
+import type { JalaliTime } from "./types";
+import { toPersianDigits } from "../../formatters/persian-digits";
+import type {
+  DatePickerClassNames,
+  DatePickerStyles,
+} from "../../theme/style-slots";
 
 export interface TimePickerProps {
-  value?: JalaliTime;
-  hours?: number;
-  minutes?: number;
-  seconds?: number;
+  value: JalaliTime;
+  onChange: (time: JalaliTime) => void;
   minuteStep?: number;
   hourStep?: number;
   showSeconds?: boolean;
-  digitType?: 'persian' | 'latin';
+  digitType?: "persian" | "latin";
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;
-  onChange: (time: JalaliTime) => void;
 }
 
 export const TimePicker: React.FC<TimePickerProps> = ({
   value,
-  hours,
-  minutes,
-  seconds,
+  onChange,
   minuteStep = 1,
   hourStep = 1,
   showSeconds = false,
+  digitType = "persian",
   classNames,
   styles,
-  onChange,
 }) => {
-  // Normalize time attributes from incoming props or fallback to 0
-  const hour = value?.hour ?? hours ?? 0;
-  const minute = value?.minute ?? minutes ?? 0;
-  const second = value?.second ?? seconds ?? 0;
+  const [openDropdown, setOpenDropdown] = useState<
+    "hour" | "minute" | "second" | null
+  >(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const handleHourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ hour: parseInt(e.target.value, 10), minute, second });
+  const hours = Array.from(
+    { length: Math.ceil(24 / hourStep) },
+    (_, i) => i * hourStep,
+  );
+  const minutes = Array.from(
+    { length: Math.ceil(60 / minuteStep) },
+    (_, i) => i * minuteStep,
+  );
+  const seconds = Array.from({ length: 60 }, (_, i) => i);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, []);
+
+  const formatNum = (n: number) => {
+    const formatted = String(n).padStart(2, "0");
+    return digitType === "persian" ? toPersianDigits(formatted) : formatted;
   };
 
-  const handleMinuteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ hour, minute: parseInt(e.target.value, 10), second });
-  };
+  const renderSelectColumn = (
+    type: "hour" | "minute" | "second",
+    currentVal: number,
+    options: number[],
+    onSelect: (val: number) => void,
+  ) => {
+    const isOpen = openDropdown === type;
 
-  const handleSecondChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChange({ hour, minute, second: parseInt(e.target.value, 10) });
-  };
+    return (
+      <div style={{ position: "relative" }}>
+        {/* Clickable Badge Trigger */}
+        <button
+          type="button"
+          onClick={() => setOpenDropdown(isOpen ? null : type)}
+          style={{
+            minWidth: "40px",
+            height: "30px",
+            padding: "0 6px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: "6px",
+            backgroundColor: isOpen
+              ? "var(--pdp-primary, #4f46e5)"
+              : "var(--pdp-surface-bg, #ffffff)",
+            color: isOpen ? "#ffffff" : "var(--pdp-text-primary, #0f172a)",
+            border: `1px solid ${isOpen ? "var(--pdp-primary, #4f46e5)" : "var(--pdp-surface-border, #e2e8f0)"}`,
+            fontSize: "13px",
+            fontWeight: 700,
+            cursor: "pointer",
+            transition: "all 0.15s ease",
+            boxShadow: isOpen ? "0 0 0 2px rgba(79, 70, 229, 0.2)" : "none",
+          }}
+          onMouseEnter={(e) => {
+            if (!isOpen) {
+              e.currentTarget.style.borderColor = "var(--pdp-primary, #4f46e5)";
+              e.currentTarget.style.backgroundColor =
+                "var(--pdp-hover-bg, #f1f5f9)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isOpen) {
+              e.currentTarget.style.borderColor =
+                "var(--pdp-surface-border, #e2e8f0)";
+              e.currentTarget.style.backgroundColor =
+                "var(--pdp-surface-bg, #ffffff)";
+            }
+          }}
+        >
+          {formatNum(currentVal)}
+        </button>
 
-  const selectStyle: React.CSSProperties = {
-    background: 'var(--pdp-surface-subtle, #f8fafc)',
-    color: 'var(--pdp-text-primary, #0f172a)',
-    border: '1px solid var(--pdp-surface-border, #e2e8f0)',
-    borderRadius: '6px',
-    padding: '4px 6px',
-    fontSize: '12px',
-    fontWeight: 600,
-    outline: 'none',
-    cursor: 'pointer',
-    direction: 'ltr',
+        {/* Scrollable Dropdown List */}
+        {isOpen && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: "calc(100% + 4px)",
+              left: "50%",
+              transform: "translateX(-50%)",
+              maxHeight: "140px",
+              width: "52px",
+              overflowY: "auto",
+              backgroundColor: "var(--pdp-surface-bg, #ffffff)",
+              border: "1px solid var(--pdp-surface-border, #e2e8f0)",
+              borderRadius: "8px",
+              boxShadow:
+                "var(--pdp-shadow, 0 10px 15px -3px rgba(0, 0, 0, 0.15))",
+              zIndex: 1050,
+              padding: "4px 2px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "2px",
+            }}
+          >
+            {options.map((opt) => {
+              const isSelected = opt === currentVal;
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => {
+                    onSelect(opt);
+                    setOpenDropdown(null);
+                  }}
+                  style={{
+                    padding: "4px 0",
+                    border: "none",
+                    borderRadius: "4px",
+                    background: isSelected
+                      ? "var(--pdp-primary, #4f46e5)"
+                      : "transparent",
+                    color: isSelected
+                      ? "#ffffff"
+                      : "var(--pdp-text-primary, #0f172a)",
+                    fontSize: "12px",
+                    fontWeight: isSelected ? 700 : 500,
+                    cursor: "pointer",
+                    transition: "background 0.12s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.backgroundColor =
+                        "var(--pdp-hover-bg, #f1f5f9)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  {formatNum(opt)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
     <div
+      ref={containerRef}
       className={classNames?.timePicker}
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '6px',
-        padding: '8px 12px',
-        borderTop: '1px solid var(--pdp-surface-border, #e2e8f0)',
-        direction: 'ltr',
-        color: 'var(--pdp-text-primary, #0f172a)',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "6px",
+        padding: "6px 12px",
+        borderTop: "1px solid var(--pdp-surface-border, #e2e8f0)",
+        backgroundColor: "var(--pdp-surface-subtle, #f8fafc)",
+        borderRadius:
+          "0 0 var(--pdp-border-radius, 10px) var(--pdp-border-radius, 10px)",
+        direction: "ltr",
+        userSelect: "none",
         ...styles?.timePicker,
       }}
     >
+      {/* ساعت */}
+      {renderSelectColumn("hour", value.hour, hours, (h) =>
+        onChange({ ...value, hour: h }),
+      )}
+
       <span
         style={{
-          fontSize: '12px',
-          color: 'var(--pdp-text-muted, #64748b)',
-          marginRight: '4px',
-          fontWeight: 500,
+          fontWeight: 800,
+          color: "var(--pdp-text-muted, #94a3b8)",
+          fontSize: "14px",
         }}
       >
-        Time:
+        :
       </span>
 
-      {/* Hours Select */}
-      <select
-        value={hour}
-        onChange={handleHourChange}
-        style={selectStyle}
-        aria-label="Select Hour"
-      >
-        {Array.from({ length: Math.ceil(24 / hourStep) }, (_, i) => i * hourStep).map((h) => (
-          <option key={h} value={h}>
-            {String(h).padStart(2, '0')}
-          </option>
-        ))}
-      </select>
+      {/* دقیقه */}
+      {renderSelectColumn("minute", value.minute, minutes, (m) =>
+        onChange({ ...value, minute: m }),
+      )}
 
-      <span style={{ color: 'var(--pdp-text-muted, #64748b)', fontWeight: 700 }}>:</span>
-
-      {/* Minutes Select */}
-      <select
-        value={minute}
-        onChange={handleMinuteChange}
-        style={selectStyle}
-        aria-label="Select Minute"
-      >
-        {Array.from({ length: Math.ceil(60 / minuteStep) }, (_, i) => i * minuteStep).map((m) => (
-          <option key={m} value={m}>
-            {String(m).padStart(2, '0')}
-          </option>
-        ))}
-      </select>
-
-      {/* Optional Seconds Select */}
+      {/* ثانیه */}
       {showSeconds && (
         <>
-          <span style={{ color: 'var(--pdp-text-muted, #64748b)', fontWeight: 700 }}>:</span>
-          <select
-            value={second}
-            onChange={handleSecondChange}
-            style={selectStyle}
-            aria-label="Select Second"
+          <span
+            style={{
+              fontWeight: 800,
+              color: "var(--pdp-text-muted, #94a3b8)",
+              fontSize: "14px",
+            }}
           >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>
-                {String(i).padStart(2, '0')}
-              </option>
-            ))}
-          </select>
+            :
+          </span>
+          {renderSelectColumn("second", value.second ?? 0, seconds, (s) =>
+            onChange({ ...value, second: s }),
+          )}
         </>
       )}
     </div>

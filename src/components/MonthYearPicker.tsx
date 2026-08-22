@@ -1,14 +1,16 @@
 // src/components/MonthYearPicker.tsx
-import React, { useState } from 'react';
-import { PERSIAN_MONTH_NAMES } from '../core/constants';
-import { toPersianDigits } from '../formatters/persian-digits';
-import type { JalaliMonthIndex } from '../core/types';
-import type { DatePickerClassNames, DatePickerStyles } from '../theme/style-slots';
+import React, { useState } from "react";
+import { PERSIAN_MONTH_NAMES } from "../core/constants";
+import { toPersianDigits } from "../formatters/persian-digits";
+import type { JalaliMonthIndex } from "../core/types";
+import type {
+  DatePickerClassNames,
+  DatePickerStyles,
+} from "../theme/style-slots";
 
 export interface MonthYearPickerProps {
   currentYear: number;
   currentMonth: number;
-  yearRangeCount?: number;
   onSelectMonth: (month: JalaliMonthIndex) => void;
   onSelectYear: (year: number) => void;
   classNames?: DatePickerClassNames;
@@ -18,186 +20,301 @@ export interface MonthYearPickerProps {
 export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
   currentYear,
   currentMonth,
-  yearRangeCount = 100,
   onSelectMonth,
   onSelectYear,
   classNames,
   styles,
 }) => {
-  const [viewMode, setViewMode] = useState<'months' | 'years'>('months');
+  const [viewLevel, setViewLevel] = useState<"months" | "years">("months");
+  const [decadeStartYear, setDecadeStartYear] = useState<number>(
+    () => Math.floor(currentYear / 10) * 10,
+  );
+  const [activeYear, setActiveYear] = useState<number>(currentYear);
 
-  // Page size for years view grid (12 years per view)
-  const PAGE_SIZE = 12;
+  const decadeYears = Array.from(
+    { length: 12 },
+    (_, i) => decadeStartYear - 1 + i,
+  );
 
-  // Calculate page start year anchored around the current year
-  const [pageStartYear, setPageStartYear] = useState<number>(() => {
-    return Math.floor(currentYear / PAGE_SIZE) * PAGE_SIZE;
-  });
-
-  const minYear = currentYear - Math.floor(yearRangeCount / 2);
-  const maxYear = currentYear + Math.floor(yearRangeCount / 2);
-
-  const handlePrevYearPage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPageStartYear((prev) => Math.max(minYear, prev - PAGE_SIZE));
+  const handlePrev = () => {
+    if (viewLevel === "months") {
+      const prevY = activeYear - 1;
+      setActiveYear(prevY);
+      onSelectYear(prevY);
+    } else {
+      setDecadeStartYear((prev) => prev - 10);
+    }
   };
 
-  const handleNextYearPage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setPageStartYear((prev) => Math.min(maxYear - PAGE_SIZE, prev + PAGE_SIZE));
+  const handleNext = () => {
+    if (viewLevel === "months") {
+      const nextY = activeYear + 1;
+      setActiveYear(nextY);
+      onSelectYear(nextY);
+    } else {
+      setDecadeStartYear((prev) => prev + 10);
+    }
   };
 
-  const yearsList = Array.from({ length: PAGE_SIZE }, (_, i) => pageStartYear + i);
+  const navBtnStyle: React.CSSProperties = {
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    padding: "6px",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--pdp-text-primary, #0f172a)",
+    transition: "all 0.15s ease",
+  };
+
+  const cellBtnBaseStyle: React.CSSProperties = {
+    height: "46px",
+    borderRadius: "10px",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "13.5px",
+    fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.15s ease",
+    background: "transparent",
+    color: "var(--pdp-text-primary, #0f172a)",
+    userSelect: "none",
+  };
 
   return (
     <div
       className={classNames?.calendar}
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '6px',
-        padding: '8px',
-        width: '100%',
-        height: '245px', // Fixed height matching the day grid
-        boxSizing: 'border-box',
-        justifyContent: 'space-between',
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        width: "100%",
+        minWidth: "260px",
+        height: "260px",
+        padding: "6px",
+        boxSizing: "border-box",
+        justifyContent: "space-between",
+        userSelect: "none",
         ...styles?.calendar,
       }}
     >
-      {/* Top Navigation Bar */}
+      {/* Header Bar */}
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '2px 4px',
-          borderBottom: '1px solid var(--pdp-surface-border, #e2e8f0)',
-          minHeight: '32px',
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 4px",
+          height: "38px",
         }}
       >
+        {/* Right Arrow (Previous in RTL) */}
         <button
           type="button"
-          onClick={handlePrevYearPage}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            color: 'var(--pdp-text-primary, #0f172a)',
-            fontSize: '14px',
-            fontWeight: 700,
+          onClick={handlePrev}
+          aria-label="Previous"
+          style={navBtnStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              "var(--pdp-hover-bg, #f1f5f9)";
           }}
-          aria-label="Previous Years"
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
         >
-          ❯
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
         </button>
 
-        {/* Mode Toggle Button */}
+        {/* Header Year Button (Clearly Interactive) */}
         <button
           type="button"
-          onClick={() => setViewMode((prev) => (prev === 'months' ? 'years' : 'months'))}
+          onClick={() => {
+            if (viewLevel === "months") {
+              setDecadeStartYear(Math.floor(activeYear / 10) * 10);
+              setViewLevel("years");
+            }
+          }}
           style={{
-            background: 'var(--pdp-surface-subtle, #f1f5f9)',
-            border: '1px solid var(--pdp-surface-border, #e2e8f0)',
-            borderRadius: '6px',
-            padding: '4px 10px',
-            cursor: 'pointer',
-            fontSize: '0.8rem',
+            background:
+              viewLevel === "months"
+                ? "var(--pdp-surface-subtle, #f1f5f9)"
+                : "transparent",
+            border:
+              viewLevel === "months"
+                ? "1px solid var(--pdp-surface-border, #e2e8f0)"
+                : "none",
+            cursor: viewLevel === "months" ? "pointer" : "default",
+            fontSize: "13.5px",
             fontWeight: 700,
-            color: 'var(--pdp-text-primary, #0f172a)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
+            color: "var(--pdp-text-primary, #0f172a)",
+            padding: "5px 12px",
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            transition: "all 0.15s ease",
+          }}
+          onMouseEnter={(e) => {
+            if (viewLevel === "months") {
+              e.currentTarget.style.backgroundColor =
+                "var(--pdp-hover-bg, #e2e8f0)";
+              e.currentTarget.style.borderColor = "var(--pdp-primary, #4f46e5)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (viewLevel === "months") {
+              e.currentTarget.style.backgroundColor =
+                "var(--pdp-surface-subtle, #f1f5f9)";
+              e.currentTarget.style.borderColor =
+                "var(--pdp-surface-border, #e2e8f0)";
+            }
           }}
         >
           <span>
-            {viewMode === 'months'
-              ? toPersianDigits(currentYear)
-              : `${toPersianDigits(pageStartYear)} - ${toPersianDigits(pageStartYear + PAGE_SIZE - 1)}`}
+            {viewLevel === "months"
+              ? toPersianDigits(activeYear)
+              : `${toPersianDigits(decadeStartYear)} - ${toPersianDigits(decadeStartYear + 9)}`}
           </span>
-          <span style={{ fontSize: '10px', opacity: 0.6 }}>
-            {viewMode === 'months' ? '▼' : '▲'}
-          </span>
+
+          {viewLevel === "months" && (
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ opacity: 0.7 }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          )}
         </button>
 
+        {/* Left Arrow (Next in RTL) */}
         <button
           type="button"
-          onClick={handleNextYearPage}
-          style={{
-            background: 'transparent',
-            border: 'none',
-            cursor: 'pointer',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            color: 'var(--pdp-text-primary, #0f172a)',
-            fontSize: '14px',
-            fontWeight: 700,
+          onClick={handleNext}
+          aria-label="Next"
+          style={navBtnStyle}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor =
+              "var(--pdp-hover-bg, #f1f5f9)";
           }}
-          aria-label="Next Years"
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
         >
-          ❮
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
         </button>
       </div>
 
-      {/* Grid Content: 12 Items (3x4 Matrix) */}
+      {/* Grid Content: 4 Columns x 3 Rows */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gridTemplateRows: 'repeat(4, 1fr)',
-          gap: '6px',
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateRows: "repeat(3, 1fr)",
+          gap: "8px 6px",
           flex: 1,
+          alignItems: "center",
         }}
       >
-        {viewMode === 'months'
+        {viewLevel === "months"
           ? PERSIAN_MONTH_NAMES.map((name, index) => {
-              const isSelected = index === currentMonth;
+              const isSelected =
+                index === currentMonth && activeYear === currentYear;
               return (
                 <button
                   key={name}
                   type="button"
                   onClick={() => onSelectMonth(index as JalaliMonthIndex)}
                   style={{
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: isSelected ? 'var(--pdp-primary, #4f46e5)' : 'var(--pdp-surface-subtle, #f1f5f9)',
-                    color: isSelected ? '#ffffff' : 'var(--pdp-text-primary, #0f172a)',
-                    cursor: 'pointer',
+                    ...cellBtnBaseStyle,
+                    background: isSelected
+                      ? "var(--pdp-primary, #4f46e5)"
+                      : "transparent",
+                    color: isSelected
+                      ? "#ffffff"
+                      : "var(--pdp-text-primary, #0f172a)",
                     fontWeight: isSelected ? 700 : 500,
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.backgroundColor =
+                        "var(--pdp-hover-bg, #f1f5f9)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
                   {name}
                 </button>
               );
             })
-          : yearsList.map((year) => {
-              const isSelected = year === currentYear;
+          : decadeYears.map((year, idx) => {
+              const isOutlier = idx === 0 || idx === 11;
+              const isSelected = year === activeYear;
+
               return (
                 <button
                   key={year}
                   type="button"
                   onClick={() => {
+                    setActiveYear(year);
                     onSelectYear(year);
-                    setViewMode('months');
+                    setViewLevel("months");
                   }}
                   style={{
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: isSelected ? 'var(--pdp-primary, #4f46e5)' : 'var(--pdp-surface-subtle, #f1f5f9)',
-                    color: isSelected ? '#ffffff' : 'var(--pdp-text-primary, #0f172a)',
-                    cursor: 'pointer',
+                    ...cellBtnBaseStyle,
+                    background: isSelected
+                      ? "var(--pdp-primary, #4f46e5)"
+                      : "transparent",
+                    color: isSelected
+                      ? "#ffffff"
+                      : isOutlier
+                        ? "var(--pdp-text-disabled, #94a3b8)"
+                        : "var(--pdp-text-primary, #0f172a)",
                     fontWeight: isSelected ? 700 : 500,
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.15s ease',
+                    opacity: isOutlier ? 0.4 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.backgroundColor =
+                        "var(--pdp-hover-bg, #f1f5f9)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected)
+                      e.currentTarget.style.backgroundColor = "transparent";
                   }}
                 >
                   {toPersianDigits(year)}
