@@ -13,6 +13,12 @@ A modern, headless-friendly Jalali (Persian/Shamsi) Date & Time Picker for React
 
 ---
 
+## 🌐 Live Interactive Demo
+
+Try all features, props, themes, and picker modes interactively in your browser:
+
+👉 **[Explore Live Demo & Playground](https://mngh-27.github.io/jalali-datepicker-package/)**
+
 ## Table of Contents
 
 1. [Introduction & Quick Start](#1-introduction--quick-start)
