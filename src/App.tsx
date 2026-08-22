@@ -1,5 +1,5 @@
 // demo/src/App.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   JalaliDatePicker,
   DatePickerThemeProvider,
@@ -9,6 +9,14 @@ import {
 
 export function App() {
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 900);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Interactive Props
   const [mode, setMode] = useState<"single" | "range" | "multiple">("single");
@@ -146,79 +154,177 @@ export function App() {
           transition: "all 0.2s ease",
         }}
       >
-        {/* Navbar */}
+        {/* Responsive Navbar */}
         <header
           style={{
-            padding: "16px 32px",
+            padding: isMobile ? "12px 16px" : "16px 32px",
             backgroundColor: cardBg,
             borderBottom: `1px solid ${borderColor}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
+            gap: "12px",
           }}
         >
           <div>
-            <h1 style={{ margin: 0, fontSize: "18px", fontWeight: 800 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: isMobile ? "16px" : "18px",
+                fontWeight: 800,
+              }}
+            >
               @mngh/jalali-datepicker
             </h1>
             <span
               style={{
-                fontSize: "12px",
+                fontSize: "11.5px",
                 color: isDark ? "#94a3b8" : "#64748b",
               }}
             >
-              Interactive Playground & Live Documentation
+              Interactive Playground & Demo
             </span>
           </div>
 
           <button
             onClick={() => setThemeMode(isDark ? "light" : "dark")}
             style={{
-              padding: "8px 16px",
+              padding: "6px 12px",
               borderRadius: "8px",
               border: `1px solid ${borderColor}`,
               backgroundColor: cardBg,
               color: textColor,
               cursor: "pointer",
               fontWeight: 600,
-              fontSize: "13px",
+              fontSize: "12.5px",
+              whiteSpace: "nowrap",
             }}
           >
-            {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
+            {isDark ? "☀️ Light" : "🌙 Dark"}
           </button>
         </header>
 
-        {/* Main Grid */}
+        {/* Responsive Layout Grid */}
         <main
           style={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns: "minmax(320px, 440px) 1fr",
-            gap: "24px",
-            padding: "24px 32px",
+            gridTemplateColumns: isMobile ? "1fr" : "minmax(320px, 440px) 1fr",
+            gap: isMobile ? "16px" : "24px",
+            padding: isMobile ? "16px" : "24px 32px",
             maxWidth: "1440px",
             width: "100%",
             margin: "0 auto",
             boxSizing: "border-box",
           }}
         >
-          {/* Left Column: Playground Controls & Managers */}
+          {/* Main Preview & Inspector Column (Shown First on Mobile) */}
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              order: isMobile ? 1 : 2,
+            }}
           >
-            {/* Props Configuration */}
+            {/* Live Component Card */}
             <section
               style={{
                 backgroundColor: cardBg,
                 borderRadius: "16px",
                 border: `1px solid ${borderColor}`,
-                padding: "20px",
+                padding: isMobile ? "20px 12px" : "36px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "16px",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: isMobile ? "300px" : "380px",
+                overflowX: "auto",
+                width: "100%",
+                boxSizing: "border-box",
               }}
             >
-              <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
+              <div
+                style={{ maxWidth: "100%", overflowX: "auto", padding: "4px" }}
+              >
+                <JalaliDatePicker
+                  key={`${mode}-${variant}-${numberOfMonths}`}
+                  mode={mode}
+                  variant={variant}
+                  value={currentValue as any}
+                  onChange={handleDateChange}
+                  digitType={digitType}
+                  numberOfMonths={numberOfMonths}
+                  enableTime={enableTime}
+                  showSeconds={showSeconds}
+                  showHolidays={showHolidays}
+                  customHolidays={customHolidays}
+                  events={events}
+                  allowClear={allowClear}
+                  showFooter={showFooter}
+                  placeholder="YYYY/MM/DD"
+                />
+              </div>
+            </section>
+
+            {/* Native Date Output Inspector */}
+            <section
+              style={{
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
+                padding: "16px",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 8px 0",
+                  fontSize: "13.5px",
+                  fontWeight: 700,
+                }}
+              >
+                📋 Native JavaScript `Date` Output:
+              </h3>
+              <pre
+                style={{
+                  margin: 0,
+                  padding: "12px",
+                  borderRadius: "10px",
+                  backgroundColor: isDark ? "#090d16" : "#f1f5f9",
+                  color: isDark ? "#38bdf8" : "#0369a1",
+                  fontSize: "12px",
+                  lineHeight: "1.5",
+                  overflowX: "auto",
+                  fontFamily: "monospace",
+                }}
+              >
+                {JSON.stringify(currentValue, null, 2) || "null"}
+              </pre>
+            </section>
+          </div>
+
+          {/* Configuration Panel & Management Sidebar */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              order: isMobile ? 2 : 1,
+            }}
+          >
+            {/* Props Configuration Card */}
+            <section
+              style={{
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
+                padding: "18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+              }}
+            >
+              <h2 style={{ margin: 0, fontSize: "14.5px", fontWeight: 700 }}>
                 ⚙️ Props Configuration
               </h2>
 
@@ -226,10 +332,10 @@ export function App() {
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
-                <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                <label style={{ fontSize: "12px", fontWeight: 600 }}>
                   Mode (`mode`):
                 </label>
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ display: "flex", gap: "6px" }}>
                   {(["single", "range", "multiple"] as const).map((m) => (
                     <button
                       key={m}
@@ -242,7 +348,7 @@ export function App() {
                         backgroundColor: mode === m ? "#4f46e5" : "transparent",
                         color: mode === m ? "#fff" : textColor,
                         cursor: "pointer",
-                        fontSize: "12px",
+                        fontSize: "11.5px",
                         fontWeight: 600,
                       }}
                     >
@@ -256,10 +362,10 @@ export function App() {
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
-                <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                <label style={{ fontSize: "12px", fontWeight: 600 }}>
                   Variant (`variant`):
                 </label>
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ display: "flex", gap: "6px" }}>
                   {(["popover", "inline", "modal"] as const).map((v) => (
                     <button
                       key={v}
@@ -273,7 +379,7 @@ export function App() {
                           variant === v ? "#4f46e5" : "transparent",
                         color: variant === v ? "#fff" : textColor,
                         cursor: "pointer",
-                        fontSize: "12px",
+                        fontSize: "11.5px",
                         fontWeight: 600,
                       }}
                     >
@@ -283,22 +389,22 @@ export function App() {
                 </div>
               </div>
 
-              {/* Digits & Dual Calendar */}
+              {/* Digits & Dual Calendar Row */}
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
+                  gap: "10px",
                 }}
               >
                 <div
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "6px",
+                    gap: "4px",
                   }}
                 >
-                  <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                  <label style={{ fontSize: "12px", fontWeight: 600 }}>
                     Digit Type:
                   </label>
                   <select
@@ -310,6 +416,7 @@ export function App() {
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
+                      fontSize: "12px",
                     }}
                   >
                     <option value="latin">Latin (0-9)</option>
@@ -321,10 +428,10 @@ export function App() {
                   style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: "6px",
+                    gap: "4px",
                   }}
                 >
-                  <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                  <label style={{ fontSize: "12px", fontWeight: 600 }}>
                     Months Grid:
                   </label>
                   <select
@@ -338,6 +445,7 @@ export function App() {
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
+                      fontSize: "12px",
                     }}
                   >
                     <option value={1}>1 Month</option>
@@ -348,18 +456,14 @@ export function App() {
 
               {/* Feature Toggles */}
               <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
               >
                 <label
                   style={{
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -377,9 +481,9 @@ export function App() {
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      fontSize: "13px",
+                      fontSize: "12.5px",
                       cursor: "pointer",
-                      marginInlineStart: "18px",
+                      marginInlineStart: "16px",
                     }}
                   >
                     <input
@@ -396,7 +500,7 @@ export function App() {
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -413,7 +517,7 @@ export function App() {
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -430,7 +534,7 @@ export function App() {
                     display: "flex",
                     alignItems: "center",
                     gap: "8px",
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -450,16 +554,16 @@ export function App() {
                 backgroundColor: cardBg,
                 borderRadius: "16px",
                 border: `1px solid ${borderColor}`,
-                padding: "20px",
+                padding: "18px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "14px",
+                gap: "12px",
               }}
             >
               <h2
                 style={{
                   margin: 0,
-                  fontSize: "15px",
+                  fontSize: "14.5px",
                   fontWeight: 700,
                   color: "#e11d48",
                 }}
@@ -469,24 +573,20 @@ export function App() {
 
               <form
                 onSubmit={handleAddHoliday}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
               >
                 <input
                   type="text"
-                  placeholder="Holiday title (e.g. Branch Launch)"
+                  placeholder="Holiday title"
                   value={newHolidayTitle}
                   onChange={(e) => setNewHolidayTitle(e.target.value)}
                   style={{
-                    padding: "8px 10px",
+                    padding: "7px 9px",
                     borderRadius: "6px",
                     border: `1px solid ${borderColor}`,
                     backgroundColor: isDark ? "#0f172a" : "#fff",
                     color: textColor,
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                   }}
                 />
 
@@ -503,28 +603,28 @@ export function App() {
                     value={newHolidayYear}
                     onChange={(e) => setNewHolidayYear(Number(e.target.value))}
                     style={{
-                      padding: "6px 8px",
+                      padding: "6px",
                       borderRadius: "6px",
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   />
                   <input
                     type="number"
-                    placeholder="Month (0-11)"
+                    placeholder="Month"
                     min={0}
                     max={11}
                     value={newHolidayMonth}
                     onChange={(e) => setNewHolidayMonth(Number(e.target.value))}
                     style={{
-                      padding: "6px 8px",
+                      padding: "6px",
                       borderRadius: "6px",
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   />
                   <input
@@ -535,12 +635,12 @@ export function App() {
                     value={newHolidayDay}
                     onChange={(e) => setNewHolidayDay(Number(e.target.value))}
                     style={{
-                      padding: "6px 8px",
+                      padding: "6px",
                       borderRadius: "6px",
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   />
                 </div>
@@ -548,13 +648,13 @@ export function App() {
                 <button
                   type="submit"
                   style={{
-                    padding: "8px 12px",
+                    padding: "7px 10px",
                     borderRadius: "6px",
                     border: "none",
                     backgroundColor: "#e11d48",
                     color: "#fff",
                     fontWeight: 600,
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -562,13 +662,13 @@ export function App() {
                 </button>
               </form>
 
-              {/* Holiday List */}
+              {/* List */}
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   gap: "6px",
-                  maxHeight: "140px",
+                  maxHeight: "130px",
                   overflowY: "auto",
                 }}
               >
@@ -579,27 +679,37 @@ export function App() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "6px 10px",
+                      padding: "6px 8px",
                       borderRadius: "6px",
                       backgroundColor: isDark ? "#090d16" : "#fff1f2",
                       border: "1px solid #fecdd3",
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
+                        gap: "6px",
+                        overflow: "hidden",
                       }}
                     >
-                      <span style={{ color: "#e11d48", fontWeight: 600 }}>
+                      <span
+                        style={{
+                          color: "#e11d48",
+                          fontWeight: 600,
+                          textOverflow: "ellipsis",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         🚩 {h.title}
                       </span>
                       <span
                         style={{
                           color: isDark ? "#fda4af" : "#be123c",
                           fontSize: "11px",
+                          flexShrink: 0,
                         }}
                       >
                         ({h.date.year}/{h.date.month + 1}/{h.date.day})
@@ -613,6 +723,7 @@ export function App() {
                         color: "#ef4444",
                         cursor: "pointer",
                         fontWeight: 700,
+                        padding: "0 4px",
                       }}
                     >
                       ✕
@@ -628,36 +739,32 @@ export function App() {
                 backgroundColor: cardBg,
                 borderRadius: "16px",
                 border: `1px solid ${borderColor}`,
-                padding: "20px",
+                padding: "18px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "14px",
+                gap: "12px",
               }}
             >
-              <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
+              <h2 style={{ margin: 0, fontSize: "14.5px", fontWeight: 700 }}>
                 📅 Add Custom Calendar Events
               </h2>
 
               <form
                 onSubmit={handleAddEvent}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "10px",
-                }}
+                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
               >
                 <input
                   type="text"
-                  placeholder="Event title (e.g. Design Review)"
+                  placeholder="Event title"
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
                   style={{
-                    padding: "8px 10px",
+                    padding: "7px 9px",
                     borderRadius: "6px",
                     border: `1px solid ${borderColor}`,
                     backgroundColor: isDark ? "#0f172a" : "#fff",
                     color: textColor,
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                   }}
                 />
 
@@ -675,28 +782,28 @@ export function App() {
                     value={newEventYear}
                     onChange={(e) => setNewEventYear(Number(e.target.value))}
                     style={{
-                      padding: "6px 8px",
+                      padding: "6px",
                       borderRadius: "6px",
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   />
                   <input
                     type="number"
-                    placeholder="Month (0-11)"
+                    placeholder="Month"
                     min={0}
                     max={11}
                     value={newEventMonth}
                     onChange={(e) => setNewEventMonth(Number(e.target.value))}
                     style={{
-                      padding: "6px 8px",
+                      padding: "6px",
                       borderRadius: "6px",
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   />
                   <input
@@ -707,12 +814,12 @@ export function App() {
                     value={newEventDay}
                     onChange={(e) => setNewEventDay(Number(e.target.value))}
                     style={{
-                      padding: "6px 8px",
+                      padding: "6px",
                       borderRadius: "6px",
                       border: `1px solid ${borderColor}`,
                       backgroundColor: isDark ? "#0f172a" : "#fff",
                       color: textColor,
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   />
                   <input
@@ -720,8 +827,8 @@ export function App() {
                     value={newEventColor}
                     onChange={(e) => setNewEventColor(e.target.value)}
                     style={{
-                      width: "32px",
-                      height: "32px",
+                      width: "28px",
+                      height: "28px",
                       padding: 0,
                       border: "none",
                       borderRadius: "6px",
@@ -733,13 +840,13 @@ export function App() {
                 <button
                   type="submit"
                   style={{
-                    padding: "8px 12px",
+                    padding: "7px 10px",
                     borderRadius: "6px",
                     border: "none",
                     backgroundColor: "#4f46e5",
                     color: "#fff",
                     fontWeight: 600,
-                    fontSize: "13px",
+                    fontSize: "12.5px",
                     cursor: "pointer",
                   }}
                 >
@@ -747,13 +854,13 @@ export function App() {
                 </button>
               </form>
 
-              {/* Events Badges List */}
+              {/* List */}
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
                   gap: "6px",
-                  maxHeight: "140px",
+                  maxHeight: "130px",
                   overflowY: "auto",
                 }}
               >
@@ -764,17 +871,18 @@ export function App() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
-                      padding: "6px 10px",
+                      padding: "6px 8px",
                       borderRadius: "6px",
                       backgroundColor: isDark ? "#0f172a" : "#f1f5f9",
-                      fontSize: "12px",
+                      fontSize: "11.5px",
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "8px",
+                        gap: "6px",
+                        overflow: "hidden",
                       }}
                     >
                       <span
@@ -783,13 +891,23 @@ export function App() {
                           height: "8px",
                           borderRadius: "50%",
                           backgroundColor: ev.color,
+                          flexShrink: 0,
                         }}
                       />
-                      <span>{ev.title}</span>
+                      <span
+                        style={{
+                          textOverflow: "ellipsis",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {ev.title}
+                      </span>
                       <span
                         style={{
                           color: isDark ? "#94a3b8" : "#64748b",
-                          fontSize: "11px",
+                          fontSize: "10.5px",
+                          flexShrink: 0,
                         }}
                       >
                         ({ev.date.year}/{ev.date.month + 1}/{ev.date.day})
@@ -803,6 +921,7 @@ export function App() {
                         color: "#ef4444",
                         cursor: "pointer",
                         fontWeight: 700,
+                        padding: "0 4px",
                       }}
                     >
                       ✕
@@ -810,78 +929,6 @@ export function App() {
                   </div>
                 ))}
               </div>
-            </section>
-          </div>
-
-          {/* Right Column: Live Component Preview & Inspector */}
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "24px" }}
-          >
-            <section
-              style={{
-                backgroundColor: cardBg,
-                borderRadius: "16px",
-                border: `1px solid ${borderColor}`,
-                padding: "40px",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                minHeight: "380px",
-              }}
-            >
-              <JalaliDatePicker
-                key={`${mode}-${variant}-${numberOfMonths}`}
-                mode={mode}
-                variant={variant}
-                value={currentValue as any}
-                onChange={handleDateChange}
-                digitType={digitType}
-                numberOfMonths={numberOfMonths}
-                enableTime={enableTime}
-                showSeconds={showSeconds}
-                showHolidays={showHolidays}
-                customHolidays={customHolidays}
-                events={events}
-                allowClear={allowClear}
-                showFooter={showFooter}
-                placeholder="YYYY/MM/DD"
-              />
-            </section>
-
-            {/* Output Inspector */}
-            <section
-              style={{
-                backgroundColor: cardBg,
-                borderRadius: "16px",
-                border: `1px solid ${borderColor}`,
-                padding: "20px",
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 10px 0",
-                  fontSize: "14px",
-                  fontWeight: 700,
-                }}
-              >
-                📋 Native JavaScript `Date` Output:
-              </h3>
-              <pre
-                style={{
-                  margin: 0,
-                  padding: "14px",
-                  borderRadius: "10px",
-                  backgroundColor: isDark ? "#090d16" : "#f1f5f9",
-                  color: isDark ? "#38bdf8" : "#0369a1",
-                  fontSize: "12.5px",
-                  lineHeight: "1.6",
-                  overflowX: "auto",
-                  fontFamily: "monospace",
-                }}
-              >
-                {JSON.stringify(currentValue, null, 2) || "null"}
-              </pre>
             </section>
           </div>
         </main>
