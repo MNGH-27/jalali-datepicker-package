@@ -36,6 +36,8 @@ export const DayCell: React.FC<DayCellProps> = ({
   onFocus,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+
   const {
     jalali,
     dayNumber,
@@ -53,55 +55,66 @@ export const DayCell: React.FC<DayCellProps> = ({
       ? toPersianDigits(dayNumber)
       : toLatinDigits(dayNumber.toString());
 
+  const isInteractive = !isDisabled && isCurrentMonth;
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isDisabled && isCurrentMonth) {
+    if (isInteractive) {
       onSelect(jalali);
     }
   };
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    if (!isDisabled && isCurrentMonth && onHover) {
+    if (isInteractive && onHover) {
       onHover(jalali);
     }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+    setIsPressed(false);
     if (onHover) {
       onHover(null);
     }
   };
 
   const handleFocus = () => {
-    if (!isDisabled && isCurrentMonth && onFocus) {
+    if (isInteractive && onFocus) {
       onFocus(jalali);
     }
   };
 
-  // Cell Background Logic
+  // رنگ‌بندی پس‌زمینه و متن در حالت‌های مختلف
   let cellBg = "transparent";
   let textColor = isCurrentMonth
     ? "var(--pdp-text-primary, #0f172a)"
     : "var(--pdp-text-disabled, #cbd5e1)";
 
-  if (isSelected || isRangeStart || isRangeEnd) {
+  const isEdgeOfRange = isRangeStart || isRangeEnd;
+
+  if (isSelected || isEdgeOfRange) {
     cellBg = "var(--pdp-primary, #4f46e5)";
     textColor = "#ffffff";
   } else if (isInRange) {
     cellBg = "var(--pdp-range-between-bg, rgba(79, 70, 229, 0.12))";
+  } else if (isHovered && isInteractive) {
+    cellBg = "var(--pdp-hover-bg, #f1f5f9)";
   }
 
-  // Holiday styling (if not selected)
-  if (
-    isHoliday &&
-    isCurrentMonth &&
-    !isSelected &&
-    !isRangeStart &&
-    !isRangeEnd
-  ) {
+  // رنگ روزهای تعطیل در صورت عدم انتخاب
+  if (isHoliday && isCurrentMonth && !isSelected && !isEdgeOfRange) {
     textColor = "var(--pdp-holiday-color, #e11d48)";
+  }
+
+  // انیمیشن transform بر اساس حالت‌های مختلف
+  let transform = "scale(1)";
+  if (isInteractive) {
+    if (isPressed) {
+      transform = "scale(0.92)";
+    } else if (isHovered && !isInRange) {
+      transform = "scale(1.08)";
+    }
   }
 
   return (
@@ -126,9 +139,13 @@ export const DayCell: React.FC<DayCellProps> = ({
         tabIndex={tabIndex}
         disabled={isDisabled || !isCurrentMonth}
         aria-selected={isSelected}
-        aria-label={`${jalali.year}/${jalali.month + 1}/${jalali.day}${holidayTitle ? ` - ${holidayTitle}` : ""}`}
+        aria-label={`${jalali.year}/${jalali.month + 1}/${jalali.day}${
+          holidayTitle ? ` - ${holidayTitle}` : ""
+        }`}
         onClick={handleClick}
         onFocus={handleFocus}
+        onMouseDown={() => isInteractive && setIsPressed(true)}
+        onMouseUp={() => isInteractive && setIsPressed(false)}
         className={classNames?.dayCell}
         style={{
           width: "100%",
@@ -150,21 +167,29 @@ export const DayCell: React.FC<DayCellProps> = ({
               : "none",
           backgroundColor: cellBg,
           color: textColor,
-          cursor: isDisabled || !isCurrentMonth ? "default" : "pointer",
+          cursor: isInteractive ? "pointer" : "default",
           fontSize: "13px",
           fontWeight: isSelected || isToday ? 700 : 500,
           outline: "none",
-          transition: "all 0.12s ease",
           position: "relative",
           padding: 0,
           margin: 0,
           boxSizing: "border-box",
+          // انیمیشن‌های نرم هاور، اسکیل و رنگ
+          transform,
+          boxShadow:
+            isHovered && isInteractive && !isInRange && !isSelected
+              ? "0 2px 6px rgba(0, 0, 0, 0.08)"
+              : "none",
+          transition:
+            "transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.14s ease, color 0.14s ease, box-shadow 0.16s ease",
+          zIndex: isHovered && isInteractive ? 2 : 1,
           ...styles?.dayCell,
         }}
       >
         <span>{formattedDay}</span>
 
-        {/* Event Dots */}
+        {/* نقاط ایونت‌ها */}
         {events.length > 0 && (
           <div
             style={{
@@ -174,6 +199,9 @@ export const DayCell: React.FC<DayCellProps> = ({
               gap: "2px",
               alignItems: "center",
               justifyContent: "center",
+              transition: "transform 0.14s ease",
+              transform:
+                isHovered && isInteractive ? "translateY(1px)" : "none",
             }}
           >
             {events.slice(0, 3).map((ev) => (
@@ -186,6 +214,7 @@ export const DayCell: React.FC<DayCellProps> = ({
                   backgroundColor: isSelected
                     ? "#ffffff"
                     : ev.color || "var(--pdp-primary, #4f46e5)",
+                  transition: "background-color 0.14s ease",
                 }}
               />
             ))}
@@ -193,13 +222,13 @@ export const DayCell: React.FC<DayCellProps> = ({
         )}
       </button>
 
-      {/* Tooltip on Hover */}
+      {/* تولتیپ شناور روز با انیمیشن Fade-in / Slide-up */}
       {isHovered && isCurrentMonth && (isHoliday || events.length > 0) && (
         <div
           role="tooltip"
           style={{
             position: "absolute",
-            bottom: "calc(100% + 6px)",
+            bottom: "calc(100% + 7px)",
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 1050,
@@ -217,6 +246,8 @@ export const DayCell: React.FC<DayCellProps> = ({
             flexDirection: "column",
             gap: "2px",
             textAlign: "center",
+            animation:
+              "pdpTooltipFade 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           }}
         >
           {isHoliday && holidayTitle && (
@@ -229,7 +260,7 @@ export const DayCell: React.FC<DayCellProps> = ({
             </span>
           ))}
 
-          {/* Tooltip Arrow */}
+          {/* فلش جهت‌نمای تولتیپ */}
           <div
             style={{
               position: "absolute",
