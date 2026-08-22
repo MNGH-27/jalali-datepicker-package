@@ -31,7 +31,7 @@ export function App() {
   const [allowClear, setAllowClear] = useState<boolean>(true);
   const [showFooter, setShowFooter] = useState<boolean>(true);
 
-  // Selected values (Native Date)
+  // Selected values
   const [singleValue, setSingleValue] = useState<Date | null>(new Date());
   const [rangeValue, setRangeValue] = useState<[Date | null, Date | null]>([
     null,
@@ -39,7 +39,7 @@ export function App() {
   ]);
   const [multiValue, setMultiValue] = useState<Date[]>([]);
 
-  // Events State
+  // Events
   const [events, setEvents] = useState<CalendarEvent[]>([
     {
       id: "1",
@@ -55,14 +55,13 @@ export function App() {
     },
   ]);
 
-  // Form State for creating a new event
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventYear, setNewEventYear] = useState(1405);
   const [newEventMonth, setNewEventMonth] = useState(5);
   const [newEventDay, setNewEventDay] = useState(15);
   const [newEventColor, setNewEventColor] = useState("#10b981");
 
-  // Custom Holidays State
+  // Custom Holidays
   const [customHolidays, setCustomHolidays] = useState<CustomHolidayRule[]>([
     {
       date: { year: 1405, month: 5, day: 1 },
@@ -71,7 +70,6 @@ export function App() {
     },
   ]);
 
-  // Form State for adding custom holiday
   const [newHolidayTitle, setNewHolidayTitle] = useState("");
   const [newHolidayYear, setNewHolidayYear] = useState(1405);
   const [newHolidayMonth, setNewHolidayMonth] = useState(5);
@@ -154,7 +152,7 @@ export function App() {
           transition: "all 0.2s ease",
         }}
       >
-        {/* Responsive Navbar */}
+        {/* Navbar */}
         <header
           style={{
             padding: isMobile ? "12px 16px" : "16px 32px",
@@ -182,7 +180,7 @@ export function App() {
                 color: isDark ? "#94a3b8" : "#64748b",
               }}
             >
-              Interactive Playground & Demo
+              Interactive Playground & Live Demo
             </span>
           </div>
 
@@ -204,7 +202,7 @@ export function App() {
           </button>
         </header>
 
-        {/* Responsive Layout Grid */}
+        {/* Main Grid */}
         <main
           style={{
             flex: 1,
@@ -218,7 +216,7 @@ export function App() {
             boxSizing: "border-box",
           }}
         >
-          {/* Main Preview & Inspector Column (Shown First on Mobile) */}
+          {/* Main Preview Column */}
           <div
             style={{
               display: "flex",
@@ -227,28 +225,35 @@ export function App() {
               order: isMobile ? 1 : 2,
             }}
           >
-            {/* Live Component Card */}
+            {/* Live Component Preview Card */}
             <section
               style={{
                 backgroundColor: cardBg,
                 borderRadius: "16px",
                 border: `1px solid ${borderColor}`,
-                padding: isMobile ? "20px 12px" : "36px",
+                padding: isMobile ? "24px 16px" : "40px 32px",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                minHeight: isMobile ? "300px" : "380px",
-                overflowX: "auto",
+                justifyContent: "flex-start",
+                minHeight: variant === "inline" ? "460px" : "480px",
+                overflow: "visible",
+                position: "relative",
                 width: "100%",
                 boxSizing: "border-box",
               }}
             >
               <div
-                style={{ maxWidth: "100%", overflowX: "auto", padding: "4px" }}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  width: "100%",
+                  position: "relative",
+                  paddingTop: "8px",
+                }}
               >
                 <JalaliDatePicker
-                  key={`${mode}-${variant}-${numberOfMonths}`}
+                  key={variant}
                   mode={mode}
                   variant={variant}
                   value={currentValue as any}
@@ -303,7 +308,7 @@ export function App() {
             </section>
           </div>
 
-          {/* Configuration Panel & Management Sidebar */}
+          {/* Configuration Panel Sidebar */}
           <div
             style={{
               display: "flex",
@@ -328,7 +333,7 @@ export function App() {
                 ⚙️ Props Configuration
               </h2>
 
-              {/* Selection Mode */}
+              {/* Mode Selection */}
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
@@ -662,7 +667,6 @@ export function App() {
                 </button>
               </form>
 
-              {/* List */}
               <div
                 style={{
                   display: "flex",
@@ -854,7 +858,6 @@ export function App() {
                 </button>
               </form>
 
-              {/* List */}
               <div
                 style={{
                   display: "flex",
