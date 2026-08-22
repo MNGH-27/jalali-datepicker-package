@@ -4,13 +4,8 @@ import {
   JalaliDatePicker,
   DatePickerThemeProvider,
   type CalendarEvent,
+  type CustomHolidayRule,
 } from "@mngh/jalali-datepicker";
-
-interface CustomHolidayRule {
-  date: { year: number; month: number; day: number };
-  title: string;
-  isOff?: boolean;
-}
 
 export function App() {
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
@@ -20,7 +15,7 @@ export function App() {
   const [variant, setVariant] = useState<"popover" | "inline" | "modal">(
     "popover",
   );
-  const [digitType, setDigitType] = useState<"persian" | "latin">("latin");
+  const [digitType, setDigitType] = useState<"latin" | "persian">("latin");
   const [numberOfMonths, setNumberOfMonths] = useState<1 | 2>(1);
   const [enableTime, setEnableTime] = useState<boolean>(true);
   const [showSeconds, setShowSeconds] = useState<boolean>(false);
@@ -28,7 +23,7 @@ export function App() {
   const [allowClear, setAllowClear] = useState<boolean>(true);
   const [showFooter, setShowFooter] = useState<boolean>(true);
 
-  // Selected values
+  // Selected values (Native Date)
   const [singleValue, setSingleValue] = useState<Date | null>(new Date());
   const [rangeValue, setRangeValue] = useState<[Date | null, Date | null]>([
     null,
@@ -59,13 +54,14 @@ export function App() {
   const [newEventDay, setNewEventDay] = useState(15);
   const [newEventColor, setNewEventColor] = useState("#10b981");
 
-  const customHolidays: CustomHolidayRule[] = [
+  // Custom Holiday Rule
+  const [customHolidays] = useState<CustomHolidayRule[]>([
     {
       date: { year: 1405, month: 5, day: 1 },
       title: "Company Anniversary",
       isOff: true,
     },
-  ];
+  ]);
 
   const handleAddEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,7 +118,7 @@ export function App() {
           transition: "all 0.2s ease",
         }}
       >
-        {/* Top Navbar */}
+        {/* Navbar */}
         <header
           style={{
             padding: "16px 32px",
@@ -178,11 +174,11 @@ export function App() {
             boxSizing: "border-box",
           }}
         >
-          {/* Left Column: Playground Controls & Event Manager */}
+          {/* Left Column: Config Panel & Event Creator */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "20px" }}
           >
-            {/* Props Configuration Card */}
+            {/* Props Config */}
             <section
               style={{
                 backgroundColor: cardBg,
@@ -198,7 +194,7 @@ export function App() {
                 ⚙️ Props Configuration
               </h2>
 
-              {/* Selection Mode */}
+              {/* Mode Selection */}
               <div
                 style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
@@ -259,7 +255,7 @@ export function App() {
                 </div>
               </div>
 
-              {/* Digits & Dual-Calendar Row */}
+              {/* Digit Type & Dual Calendar */}
               <div
                 style={{
                   display: "grid",
@@ -420,7 +416,7 @@ export function App() {
               </div>
             </section>
 
-            {/* Event Manager Card */}
+            {/* Custom Events Creator */}
             <section
               style={{
                 backgroundColor: cardBg,
@@ -545,7 +541,7 @@ export function App() {
                 </button>
               </form>
 
-              {/* Event Badges List */}
+              {/* Events Badges List */}
               <div
                 style={{
                   display: "flex",
@@ -611,7 +607,7 @@ export function App() {
             </section>
           </div>
 
-          {/* Right Column: Live Interactive Component Preview & State Output */}
+          {/* Right Column: Live Interactive Preview & Inspector */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "24px" }}
           >
@@ -640,15 +636,15 @@ export function App() {
                 enableTime={enableTime}
                 showSeconds={showSeconds}
                 showHolidays={showHolidays}
+                customHolidays={customHolidays}
+                events={events}
                 allowClear={allowClear}
                 showFooter={showFooter}
-                events={events}
-                customHolidays={customHolidays}
                 placeholder="YYYY/MM/DD"
               />
             </section>
 
-            {/* Native Date Output Inspector */}
+            {/* Output Inspector */}
             <section
               style={{
                 backgroundColor: cardBg,
