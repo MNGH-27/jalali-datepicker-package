@@ -1,6 +1,6 @@
 {
   "name": "@mngh/jalali-datepicker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A modern, zero-dependency, lightweight, accessible, and highly customizable Jalali (Persian/Shamsi) Date & Time Picker for React.",
   "type": "module",
   "main": "./dist/index.cjs",
