@@ -113,6 +113,9 @@ export const DayCell: React.FC<DayCellProps> = ({
         justifyContent: "center",
         width: "var(--pdp-cell-size, 34px)",
         height: "var(--pdp-cell-size, 34px)",
+        margin: 0,
+        padding: 0,
+        boxSizing: "border-box",
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -154,6 +157,8 @@ export const DayCell: React.FC<DayCellProps> = ({
           transition: "all 0.12s ease",
           position: "relative",
           padding: 0,
+          margin: 0,
+          boxSizing: "border-box",
           ...styles?.dayCell,
         }}
       >
@@ -168,6 +173,7 @@ export const DayCell: React.FC<DayCellProps> = ({
               display: "flex",
               gap: "2px",
               alignItems: "center",
+              justifyContent: "center",
             }}
           >
             {events.slice(0, 3).map((ev) => (
@@ -187,7 +193,7 @@ export const DayCell: React.FC<DayCellProps> = ({
         )}
       </button>
 
-      {/* Modern Popover / Tooltip on Hover */}
+      {/* Tooltip on Hover */}
       {isHovered && isCurrentMonth && (isHoliday || events.length > 0) && (
         <div
           role="tooltip"

@@ -121,6 +121,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const containerRef = useRef<HTMLDivElement>(null);
   const isModal = variant === "modal";
 
+  // استخراج مقدار اولیه ساعت و دقیقه
   const initialTime = useMemo<JalaliTime>(() => {
     if (defaultTimeValue) return defaultTimeValue;
     if (value instanceof Date) {
@@ -144,6 +145,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const activeTime =
     timeValue !== undefined ? (timeValue ?? getCurrentTime()) : internalTime;
 
+  // بستن پاپ‌اور هنگام کلیک خارج از محدوده
   useEffect(() => {
     if (variant === "inline" || !isOpen) return;
 
@@ -166,6 +168,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     };
   }, [variant, isOpen]);
 
+  // تبدیل Date به فرمت محاسباتی تقویم جلالی
   const internalJalaliValue = useMemo<
     InternalSelectedValue<M> | undefined
   >(() => {
@@ -225,6 +228,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     [maxDate],
   );
 
+  // تبدیل خروجی به آبجکت Date واقعی به همراه زمان انتخابی
   const convertJalaliToDateOutput = useCallback(
     (
       jVal: InternalSelectedValue<M>,
@@ -293,6 +297,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     },
   });
 
+  // تغییر زمان و انتشار Date جدید با ساعت به‌روز
   const handleTimeChange = useCallback(
     (newTime: JalaliTime) => {
       if (timeValue === undefined) setInternalTime(newTime);
@@ -330,6 +335,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       isRtl: true,
     });
 
+  // پشتیبانی از کلید Escape در حالت مودال
   useEffect(() => {
     if (!isModal || !isOpen) return;
     const originalOverflow = document.body.style.overflow;
@@ -439,7 +445,12 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     showPrevArrow = true,
     showNextArrow = true,
   ) => (
-    <div style={{ width: "262px", flexShrink: 0 }}>
+    <div
+      style={{
+        width: "calc(7 * var(--pdp-cell-size, 34px) + 6 * 4px)",
+        flexShrink: 0,
+      }}
+    >
       <Header
         year={y}
         monthName={PERSIAN_MONTH_NAMES[m]}
@@ -542,7 +553,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         />
       ) : (
         <>
-          {/* Calendar Panes Container: No wrap under any condition */}
+          {/* Dual Calendar: همواره کنار هم بدون Wrap شدن */}
           <div
             style={{
               display: "flex",
@@ -688,6 +699,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               }}
             />
 
+            {/* دکمه پاک کردن */}
             {allowClear && hasValue && (
               <button
                 type="button"
