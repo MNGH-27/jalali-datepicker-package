@@ -1,458 +1,688 @@
-// src/App.tsx
+// demo/src/App.tsx
 import React, { useState } from "react";
 import {
   JalaliDatePicker,
   DatePickerThemeProvider,
-  formatJalaliDate,
-  toPersianDigits,
-} from "@mngh/jalali-datepicker";
-import type {
-  DatePickerMode,
-  DatePickerVariant,
-  DateRange,
+  type CalendarEvent,
 } from "@mngh/jalali-datepicker";
 
+interface CustomHolidayRule {
+  date: { year: number; month: number; day: number };
+  title: string;
+  isOff?: boolean;
+}
+
 export function App() {
-  // Playground State Controls
-  const [mode, setMode] = useState<DatePickerMode>("single");
-  const [variant, setVariant] = useState<DatePickerVariant>("popover");
+  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
+
+  // Interactive Props
+  const [mode, setMode] = useState<"single" | "range" | "multiple">("single");
+  const [variant, setVariant] = useState<"popover" | "inline" | "modal">(
+    "popover",
+  );
+  const [digitType, setDigitType] = useState<"persian" | "latin">("latin");
+  const [numberOfMonths, setNumberOfMonths] = useState<1 | 2>(1);
   const [enableTime, setEnableTime] = useState<boolean>(true);
   const [showSeconds, setShowSeconds] = useState<boolean>(false);
   const [showHolidays, setShowHolidays] = useState<boolean>(true);
+  const [allowClear, setAllowClear] = useState<boolean>(true);
   const [showFooter, setShowFooter] = useState<boolean>(true);
 
-  // Selected Values
-  const [singleDate, setSingleDate] = useState<Date | null>(new Date());
-  const [rangeDate, setRangeDate] = useState<DateRange>([null, null]);
-  const [multipleDates, setMultipleDates] = useState<Date[]>([]);
+  // Selected values
+  const [singleValue, setSingleValue] = useState<Date | null>(new Date());
+  const [rangeValue, setRangeValue] = useState<[Date | null, Date | null]>([
+    null,
+    null,
+  ]);
+  const [multiValue, setMultiValue] = useState<Date[]>([]);
 
-  const activeValue =
+  // Events State
+  const [events, setEvents] = useState<CalendarEvent[]>([
+    {
+      id: "1",
+      date: { year: 1405, month: 5, day: 10 },
+      title: "Code Review Meeting",
+      color: "#3b82f6",
+    },
+    {
+      id: "2",
+      date: { year: 1405, month: 5, day: 25 },
+      title: "Project Deadline",
+      color: "#ef4444",
+    },
+  ]);
+
+  // Form State for creating a new event
+  const [newEventTitle, setNewEventTitle] = useState("");
+  const [newEventYear, setNewEventYear] = useState(1405);
+  const [newEventMonth, setNewEventMonth] = useState(5);
+  const [newEventDay, setNewEventDay] = useState(15);
+  const [newEventColor, setNewEventColor] = useState("#10b981");
+
+  const customHolidays: CustomHolidayRule[] = [
+    {
+      date: { year: 1405, month: 5, day: 1 },
+      title: "Company Anniversary",
+      isOff: true,
+    },
+  ];
+
+  const handleAddEvent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEventTitle.trim()) return;
+
+    const newEv: CalendarEvent = {
+      id: String(Date.now()),
+      title: newEventTitle.trim(),
+      date: {
+        year: Number(newEventYear),
+        month: Number(newEventMonth) as CalendarEvent["date"]["month"],
+        day: Number(newEventDay),
+      },
+      color: newEventColor,
+    };
+
+    setEvents((prev) => [...prev, newEv]);
+    setNewEventTitle("");
+  };
+
+  const handleRemoveEvent = (id: string) => {
+    setEvents((prev) => prev.filter((ev) => ev.id !== id));
+  };
+
+  const currentValue =
     mode === "single"
-      ? singleDate
+      ? singleValue
       : mode === "range"
-        ? rangeDate
-        : multipleDates;
+        ? rangeValue
+        : multiValue;
 
   const handleDateChange = (val: any) => {
-    if (mode === "single") setSingleDate(val);
-    else if (mode === "range") setRangeDate(val);
-    else if (mode === "multiple") setMultipleDates(val);
+    if (mode === "single") setSingleValue(val);
+    else if (mode === "range") setRangeValue(val);
+    else setMultiValue(val);
   };
 
-  const getFormattedSummary = () => {
-    if (mode === "single") {
-      if (!singleDate) return "موردی انتخاب نشده";
-      return formatJalaliDate(
-        singleDate,
-        enableTime ? "YYYY/MM/DD HH:mm:ss" : "YYYY/MM/DD",
-      );
-    }
-    if (mode === "range") {
-      const [start, end] = rangeDate;
-      if (!start) return "موردی انتخاب نشده";
-      if (!end) return `${formatJalaliDate(start, "YYYY/MM/DD")} تا ...`;
-      return `${formatJalaliDate(start, "YYYY/MM/DD")} تا ${formatJalaliDate(end, "YYYY/MM/DD")}`;
-    }
-    if (mode === "multiple") {
-      if (!multipleDates.length) return "موردی انتخاب نشده";
-      return `${toPersianDigits(multipleDates.length)} تاریخ انتخاب شده`;
-    }
-    return "";
-  };
+  const isDark = themeMode === "dark";
+  const bgMain = isDark ? "#0f172a" : "#f8fafc";
+  const cardBg = isDark ? "#1e293b" : "#ffffff";
+  const textColor = isDark ? "#f8fafc" : "#0f172a";
+  const borderColor = isDark ? "#334155" : "#e2e8f0";
 
   return (
-    <DatePickerThemeProvider mode="light">
+    <DatePickerThemeProvider mode={themeMode}>
       <div
-        dir="rtl"
         style={{
           minHeight: "100vh",
-          backgroundColor: "#0b1120",
-          color: "#f8fafc",
-          fontFamily:
-            'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          backgroundColor: bgMain,
+          color: textColor,
+          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
           display: "flex",
           flexDirection: "column",
+          transition: "all 0.2s ease",
         }}
       >
-        {/* Navbar */}
+        {/* Top Navbar */}
         <header
           style={{
-            borderBottom: "1px solid #1e293b",
             padding: "16px 32px",
+            backgroundColor: cardBg,
+            borderBottom: `1px solid ${borderColor}`,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            backgroundColor: "#0f172a",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div
-              style={{
-                width: "38px",
-                height: "38px",
-                borderRadius: "10px",
-                background: "linear-gradient(135deg, #4f46e5, #9333ea)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 700,
-                color: "#ffffff",
-                boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
-              }}
-            >
-              📅
-            </div>
-            <div>
-              <h1
-                style={{
-                  margin: 0,
-                  fontSize: "1.15rem",
-                  fontWeight: 700,
-                  color: "#f8fafc",
-                }}
-              >
-                Jalali DatePicker Playground
-              </h1>
-              <span
-                style={{
-                  color: "#818cf8",
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                }}
-              >
-                @mngh/jalali-datepicker
-              </span>
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: "18px", fontWeight: 800 }}>
+              @mngh/jalali-datepicker
+            </h1>
             <span
               style={{
-                fontSize: "0.75rem",
-                backgroundColor: "#1e293b",
-                color: "#94a3b8",
-                padding: "4px 10px",
-                borderRadius: "6px",
-                border: "1px solid #334155",
+                fontSize: "12px",
+                color: isDark ? "#94a3b8" : "#64748b",
               }}
             >
-              React 18 / 19
+              Interactive Playground & Live Documentation
             </span>
           </div>
+
+          <button
+            onClick={() => setThemeMode(isDark ? "light" : "dark")}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: `1px solid ${borderColor}`,
+              backgroundColor: cardBg,
+              color: textColor,
+              cursor: "pointer",
+              fontWeight: 600,
+              fontSize: "13px",
+            }}
+          >
+            {isDark ? "☀️ Light Mode" : "🌙 Dark Mode"}
+          </button>
         </header>
 
-        {/* Content Layout */}
+        {/* Main Grid */}
         <main
           style={{
             flex: 1,
             display: "grid",
-            gridTemplateColumns: "320px 1fr",
+            gridTemplateColumns: "minmax(320px, 440px) 1fr",
             gap: "24px",
-            padding: "32px",
-            maxWidth: "1280px",
+            padding: "24px 32px",
+            maxWidth: "1440px",
             width: "100%",
             margin: "0 auto",
             boxSizing: "border-box",
           }}
         >
-          {/* Controls Panel */}
-          <aside
-            style={{
-              backgroundColor: "#0f172a",
-              border: "1px solid #1e293b",
-              borderRadius: "14px",
-              padding: "20px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-              height: "fit-content",
-            }}
+          {/* Left Column: Playground Controls & Event Manager */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
           >
-            <h2
+            {/* Props Configuration Card */}
+            <section
               style={{
-                margin: 0,
-                fontSize: "0.95rem",
-                fontWeight: 700,
-                borderBottom: "1px solid #1e293b",
-                paddingBottom: "10px",
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
+                padding: "20px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
               }}
             >
-              پیکربندی دمو
-            </h2>
+              <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
+                ⚙️ Props Configuration
+              </h2>
 
-            {/* Mode Selector */}
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.82rem",
-                  color: "#94a3b8",
-                  marginBottom: "8px",
-                }}
-              >
-                حالت انتخاب (Mode):
-              </label>
+              {/* Selection Mode */}
               <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "6px",
-                }}
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
-                {(["single", "range", "multiple"] as DatePickerMode[]).map(
-                  (m) => (
+                <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                  Mode (`mode`):
+                </label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {(["single", "range", "multiple"] as const).map((m) => (
                     <button
                       key={m}
-                      type="button"
                       onClick={() => setMode(m)}
                       style={{
-                        padding: "8px 4px",
-                        borderRadius: "8px",
-                        border: "1px solid",
-                        borderColor: mode === m ? "#4f46e5" : "#1e293b",
-                        background: mode === m ? "#4f46e5" : "#1e293b",
-                        color: mode === m ? "#ffffff" : "#94a3b8",
+                        flex: 1,
+                        padding: "6px 0",
+                        borderRadius: "6px",
+                        border: `1px solid ${mode === m ? "#4f46e5" : borderColor}`,
+                        backgroundColor: mode === m ? "#4f46e5" : "transparent",
+                        color: mode === m ? "#fff" : textColor,
                         cursor: "pointer",
-                        fontSize: "0.8rem",
+                        fontSize: "12px",
                         fontWeight: 600,
-                        transition: "all 0.15s ease",
                       }}
                     >
-                      {m === "single"
-                        ? "تکی"
-                        : m === "range"
-                          ? "بازه"
-                          : "چندتایی"}
+                      {m}
                     </button>
-                  ),
-                )}
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Variant Selector */}
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.82rem",
-                  color: "#94a3b8",
-                  marginBottom: "8px",
-                }}
+              {/* Display Variant */}
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
-                نوع نمایش (Variant):
-              </label>
+                <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                  Variant (`variant`):
+                </label>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {(["popover", "inline", "modal"] as const).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setVariant(v)}
+                      style={{
+                        flex: 1,
+                        padding: "6px 0",
+                        borderRadius: "6px",
+                        border: `1px solid ${variant === v ? "#4f46e5" : borderColor}`,
+                        backgroundColor:
+                          variant === v ? "#4f46e5" : "transparent",
+                        color: variant === v ? "#fff" : textColor,
+                        cursor: "pointer",
+                        fontSize: "12px",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Digits & Dual-Calendar Row */}
               <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
-                  gap: "6px",
+                  gap: "12px",
                 }}
               >
-                {(["popover", "inline"] as DatePickerVariant[]).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => setVariant(v)}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                  }}
+                >
+                  <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                    Digit Type:
+                  </label>
+                  <select
+                    value={digitType}
+                    onChange={(e) => setDigitType(e.target.value as any)}
                     style={{
-                      padding: "8px 4px",
-                      borderRadius: "8px",
-                      border: "1px solid",
-                      borderColor: variant === v ? "#4f46e5" : "#1e293b",
-                      background: variant === v ? "#4f46e5" : "#1e293b",
-                      color: variant === v ? "#ffffff" : "#94a3b8",
-                      cursor: "pointer",
-                      fontSize: "0.8rem",
-                      fontWeight: 600,
-                      transition: "all 0.15s ease",
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
                     }}
                   >
-                    {v === "popover" ? "Popover" : "Inline"}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <option value="latin">Latin (0-9)</option>
+                    <option value="persian">Persian (۰-۹)</option>
+                  </select>
+                </div>
 
-            {/* Feature Toggles */}
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-                paddingTop: "4px",
-              }}
-            >
-              <label
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "6px",
+                  }}
+                >
+                  <label style={{ fontSize: "12.5px", fontWeight: 600 }}>
+                    Months Grid:
+                  </label>
+                  <select
+                    value={numberOfMonths}
+                    onChange={(e) =>
+                      setNumberOfMonths(Number(e.target.value) as any)
+                    }
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                    }}
+                  >
+                    <option value={1}>1 Month</option>
+                    <option value={2}>2 Months (Dual)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Feature Toggles */}
+              <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
+                  flexDirection: "column",
                   gap: "10px",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
                 }}
               >
-                <input
-                  type="checkbox"
-                  checked={enableTime}
-                  onChange={(e) => setEnableTime(e.target.checked)}
-                />
-                انتخاب ساعت و دقیقه (TimePicker)
-              </label>
-
-              {enableTime && (
                 <label
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "10px",
+                    gap: "8px",
+                    fontSize: "13px",
                     cursor: "pointer",
-                    fontSize: "0.85rem",
-                    paddingRight: "22px",
                   }}
                 >
                   <input
                     type="checkbox"
-                    checked={showSeconds}
-                    onChange={(e) => setShowSeconds(e.target.checked)}
+                    checked={enableTime}
+                    onChange={(e) => setEnableTime(e.target.checked)}
                   />
-                  نمایش فیلد ثانیه
+                  Enable Time Picker (`enableTime`)
                 </label>
-              )}
 
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={showHolidays}
-                  onChange={(e) => setShowHolidays(e.target.checked)}
-                />
-                هایلایت تعطیلات رسمی ایران
-              </label>
+                {enableTime && (
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                      marginInlineStart: "18px",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={showSeconds}
+                      onChange={(e) => setShowSeconds(e.target.checked)}
+                    />
+                    Show Seconds (`showSeconds`)
+                  </label>
+                )}
 
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  cursor: "pointer",
-                  fontSize: "0.85rem",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={showFooter}
-                  onChange={(e) => setShowFooter(e.target.checked)}
-                />
-                نمایش فوتر (دکمه‌های اقدام)
-              </label>
-            </div>
-          </aside>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showHolidays}
+                    onChange={(e) => setShowHolidays(e.target.checked)}
+                  />
+                  Show Holidays & Fridays (`showHolidays`)
+                </label>
 
-          {/* Playground Preview & Output */}
-          <section
-            style={{ display: "flex", flexDirection: "column", gap: "20px" }}
-          >
-            {/* Live Component Viewer */}
-            <div
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={allowClear}
+                    onChange={(e) => setAllowClear(e.target.checked)}
+                  />
+                  Allow Clear Button (`allowClear`)
+                </label>
+
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showFooter}
+                    onChange={(e) => setShowFooter(e.target.checked)}
+                  />
+                  Show Footer (`showFooter`)
+                </label>
+              </div>
+            </section>
+
+            {/* Event Manager Card */}
+            <section
               style={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #1e293b",
-                borderRadius: "14px",
-                padding: "48px 24px",
-                minHeight: "380px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <JalaliDatePicker
-                key={`${mode}-${variant}-${enableTime}-${showSeconds}`}
-                mode={mode}
-                variant={variant}
-                value={activeValue}
-                onChange={handleDateChange}
-                enableTime={enableTime}
-                showSeconds={showSeconds}
-                showHolidays={showHolidays}
-                showFooter={showFooter}
-                placeholder="انتخاب تاریخ..."
-              />
-            </div>
-
-            {/* Output Panel */}
-            <div
-              style={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #1e293b",
-                borderRadius: "14px",
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
                 padding: "20px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "10px",
+                gap: "14px",
               }}
             >
+              <h2 style={{ margin: 0, fontSize: "15px", fontWeight: 700 }}>
+                📅 Add Custom Calendar Events
+              </h2>
+
+              <form
+                onSubmit={handleAddEvent}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="Event title (e.g. Design Review)"
+                  value={newEventTitle}
+                  onChange={(e) => setNewEventTitle(e.target.value)}
+                  style={{
+                    padding: "8px 10px",
+                    borderRadius: "6px",
+                    border: `1px solid ${borderColor}`,
+                    backgroundColor: isDark ? "#0f172a" : "#fff",
+                    color: textColor,
+                    fontSize: "13px",
+                  }}
+                />
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr 1fr auto",
+                    gap: "6px",
+                    alignItems: "center",
+                  }}
+                >
+                  <input
+                    type="number"
+                    placeholder="Year"
+                    value={newEventYear}
+                    onChange={(e) => setNewEventYear(Number(e.target.value))}
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                      fontSize: "12px",
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Month (0-11)"
+                    min={0}
+                    max={11}
+                    value={newEventMonth}
+                    onChange={(e) => setNewEventMonth(Number(e.target.value))}
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                      fontSize: "12px",
+                    }}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Day"
+                    min={1}
+                    max={31}
+                    value={newEventDay}
+                    onChange={(e) => setNewEventDay(Number(e.target.value))}
+                    style={{
+                      padding: "6px 8px",
+                      borderRadius: "6px",
+                      border: `1px solid ${borderColor}`,
+                      backgroundColor: isDark ? "#0f172a" : "#fff",
+                      color: textColor,
+                      fontSize: "12px",
+                    }}
+                  />
+                  <input
+                    type="color"
+                    value={newEventColor}
+                    onChange={(e) => setNewEventColor(e.target.value)}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      padding: 0,
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                    }}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    border: "none",
+                    backgroundColor: "#4f46e5",
+                    color: "#fff",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    cursor: "pointer",
+                  }}
+                >
+                  + Add Event Badge
+                </button>
+              </form>
+
+              {/* Event Badges List */}
               <div
                 style={{
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  flexDirection: "column",
+                  gap: "6px",
+                  maxHeight: "140px",
+                  overflowY: "auto",
                 }}
               >
-                <span
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#94a3b8",
-                    fontWeight: 600,
-                  }}
-                >
-                  نتیجه خروجی:
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "#38bdf8",
-                    fontWeight: 600,
-                  }}
-                >
-                  {getFormattedSummary()}
-                </span>
+                {events.map((ev) => (
+                  <div
+                    key={ev.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      backgroundColor: isDark ? "#0f172a" : "#f1f5f9",
+                      fontSize: "12px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: "8px",
+                          height: "8px",
+                          borderRadius: "50%",
+                          backgroundColor: ev.color,
+                        }}
+                      />
+                      <span>{ev.title}</span>
+                      <span
+                        style={{
+                          color: isDark ? "#94a3b8" : "#64748b",
+                          fontSize: "11px",
+                        }}
+                      >
+                        ({ev.date.year}/{ev.date.month + 1}/{ev.date.day})
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveEvent(ev.id)}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#ef4444",
+                        cursor: "pointer",
+                        fontWeight: 700,
+                      }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
+            </section>
+          </div>
 
+          {/* Right Column: Live Interactive Component Preview & State Output */}
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "24px" }}
+          >
+            {/* Live Component Card */}
+            <section
+              style={{
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
+                padding: "40px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "380px",
+              }}
+            >
+              <JalaliDatePicker
+                key={`${mode}-${variant}-${numberOfMonths}`}
+                mode={mode}
+                variant={variant}
+                value={currentValue as any}
+                onChange={handleDateChange}
+                digitType={digitType}
+                numberOfMonths={numberOfMonths}
+                enableTime={enableTime}
+                showSeconds={showSeconds}
+                showHolidays={showHolidays}
+                allowClear={allowClear}
+                showFooter={showFooter}
+                events={events}
+                customHolidays={customHolidays}
+                placeholder="YYYY/MM/DD"
+              />
+            </section>
+
+            {/* Native Date Output Inspector */}
+            <section
+              style={{
+                backgroundColor: cardBg,
+                borderRadius: "16px",
+                border: `1px solid ${borderColor}`,
+                padding: "20px",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 10px 0",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                }}
+              >
+                📋 Native JavaScript `Date` Output:
+              </h3>
               <pre
-                dir="ltr"
                 style={{
                   margin: 0,
                   padding: "14px",
-                  backgroundColor: "#020617",
-                  border: "1px solid #1e293b",
                   borderRadius: "10px",
-                  color: "#7dd3fc",
-                  fontSize: "0.82rem",
-                  fontFamily:
-                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                  backgroundColor: isDark ? "#090d16" : "#f1f5f9",
+                  color: isDark ? "#38bdf8" : "#0369a1",
+                  fontSize: "12.5px",
+                  lineHeight: "1.6",
                   overflowX: "auto",
-                  lineHeight: "1.5",
+                  fontFamily: "monospace",
                 }}
               >
-                {JSON.stringify(
-                  {
-                    mode,
-                    variant,
-                    hasTime: enableTime,
-                    value: activeValue,
-                  },
-                  null,
-                  2,
-                )}
+                {JSON.stringify(currentValue, null, 2) || "null"}
               </pre>
-            </div>
-          </section>
+            </section>
+          </div>
         </main>
       </div>
     </DatePickerThemeProvider>

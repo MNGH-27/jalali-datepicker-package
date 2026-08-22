@@ -10,7 +10,7 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
-    "@mngh/jalali-datepicker": "^1.0.6",
+    "@mngh/jalali-datepicker": "^1.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
