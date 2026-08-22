@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
       - name: Build Demo
-        run: npx vite build --config vite.config.demo.ts --base=/jalali-datepicker-package/
+        run: npx vite build demo --base=/jalali-datepicker-package/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
