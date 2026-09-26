@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useEffect,
 } from "react";
+import { createPortal } from "react-dom";
 import { useJalaliDatePicker } from "../hooks/useJalaliDatePicker";
 import { useCalendarKeyboard } from "../a11y/useCalendarKeyboard";
 import type {
@@ -122,6 +123,12 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   const [isOpen, setIsOpen] = useState(variant === "inline");
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const [popoverPosition, setPopoverPosition] = useState<{
+    top: number;
+    left: number;
+    maxHeight: number;
+  } | null>(null);
   const isModal = variant === "modal";
 
   useEffect(() => {
@@ -159,7 +166,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     const handleClickOutside = (e: MouseEvent | TouchEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
+        !containerRef.current.contains(e.target as Node) &&
+        !calendarRef.current?.contains(e.target as Node)
       ) {
         setIsOpen(false);
         setShowMonthYearPicker(false);
@@ -174,6 +182,70 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [variant, isOpen]);
+
+  useEffect(() => {
+    if (variant !== "popover" || !isOpen) {
+      setPopoverPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const trigger = containerRef.current;
+      const calendar = calendarRef.current;
+      if (!trigger || !calendar) return;
+
+      const margin = 12;
+      const gap = 6;
+      const triggerRect = trigger.getBoundingClientRect();
+      const calendarRect = calendar.getBoundingClientRect();
+      const availableBelow = Math.max(
+        0,
+        window.innerHeight - triggerRect.bottom - gap - margin,
+      );
+      const availableAbove = Math.max(0, triggerRect.top - gap - margin);
+      const openAbove =
+        calendarRect.height > availableBelow && availableAbove > availableBelow;
+      const maxHeight = Math.max(
+        120,
+        openAbove ? availableAbove : availableBelow,
+      );
+      const visibleHeight = Math.min(calendarRect.height, maxHeight);
+      const top = openAbove
+        ? Math.max(margin, triggerRect.top - gap - visibleHeight)
+        : triggerRect.bottom + gap;
+      const maxLeft = Math.max(
+        margin,
+        window.innerWidth - calendarRect.width - margin,
+      );
+      const left = Math.min(Math.max(margin, triggerRect.left), maxLeft);
+
+      setPopoverPosition((current) => {
+        if (
+          current?.top === top &&
+          current.left === left &&
+          current.maxHeight === maxHeight
+        ) {
+          return current;
+        }
+        return { top, left, maxHeight };
+      });
+    };
+
+    updatePosition();
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updatePosition);
+    if (calendarRef.current) resizeObserver?.observe(calendarRef.current);
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
     };
   }, [variant, isOpen]);
 
@@ -553,6 +625,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
 
   const calendarContent = (
     <div
+      ref={calendarRef}
       role={isModal ? "dialog" : "region"}
       aria-modal={isModal ? true : undefined}
       aria-label="تقویم شمسی"
@@ -560,10 +633,11 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       onClick={(e) => e.stopPropagation()}
       className={classNames?.calendar}
       style={{
-        position:
-          variant === "popover" ? "absolute" : isModal ? "relative" : "static",
-        top: variant === "popover" ? "calc(100% + 6px)" : undefined,
-        left: variant === "popover" ? 0 : undefined,
+        position: variant === "popover" ? "fixed" : isModal ? "relative" : "static",
+        top: variant === "popover" ? (popoverPosition?.top ?? 0) : undefined,
+        left: variant === "popover" ? (popoverPosition?.left ?? 0) : undefined,
+        visibility:
+          variant === "popover" && !popoverPosition ? "hidden" : "visible",
         zIndex: isModal ? zIndex + 1 : zIndex,
         padding: "12px",
         backgroundColor: "var(--pdp-surface-bg, #ffffff)",
@@ -575,8 +649,12 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         width: "max-content",
         maxWidth:
           variant === "inline" ? "100%" : "calc(100vw - 24px)",
-        maxHeight: isModal ? "calc(100dvh - 32px)" : undefined,
-        overflowY: isModal ? "auto" : undefined,
+        maxHeight: isModal
+          ? "calc(100dvh - 32px)"
+          : variant === "popover"
+            ? popoverPosition?.maxHeight
+            : undefined,
+        overflowY: isModal || variant === "popover" ? "auto" : undefined,
         overflowX: "hidden",
         userSelect: "none",
         display: "flex",
@@ -794,35 +872,42 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         ))}
 
       {isOpen &&
-        (isModal ? (
-          <div
-            role="presentation"
-            onClick={() => setIsOpen(false)}
-            className={classNames?.modalBackdrop}
-            style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: "rgba(15, 23, 42, 0.6)",
-              backdropFilter: "blur(4px)",
-              zIndex: zIndex,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "16px",
-              boxSizing: "border-box",
-              overflowY: "auto",
-              direction: "rtl",
-              ...styles?.modalBackdrop,
-            }}
-          >
-            {calendarContent}
-          </div>
-        ) : (
-          calendarContent
-        ))}
+        (variant === "inline"
+          ? calendarContent
+          : typeof document !== "undefined"
+            ? createPortal(
+                isModal ? (
+                  <div
+                    role="presentation"
+                    onClick={() => setIsOpen(false)}
+                    className={classNames?.modalBackdrop}
+                    style={{
+                      position: "fixed",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(15, 23, 42, 0.6)",
+                      backdropFilter: "blur(4px)",
+                      zIndex: zIndex,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "16px",
+                      boxSizing: "border-box",
+                      overflowY: "auto",
+                      direction: "rtl",
+                      ...styles?.modalBackdrop,
+                    }}
+                  >
+                    {calendarContent}
+                  </div>
+                ) : (
+                  calendarContent
+                ),
+                document.body,
+              )
+            : null)}
     </div>
   );
 }
