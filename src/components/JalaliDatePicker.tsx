@@ -52,6 +52,7 @@ import type {
   DatePickerStyles,
 } from "../theme/style-slots";
 import { isJalaliMonthSelectable } from "../core/date-availability";
+import { useTheme } from "../theme/ThemeProvider";
 
 export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   mode?: M;
@@ -120,6 +121,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
   customHolidays,
   zIndex = 9999,
 }: JalaliDatePickerProps<M>) {
+  const { theme, mode: themeMode } = useTheme();
   const [isOpen, setIsOpen] = useState(variant === "inline");
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -130,6 +132,32 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     maxHeight: number;
   } | null>(null);
   const isModal = variant === "modal";
+
+  const themeVariables = useMemo(
+    () =>
+      ({
+        "--pdp-primary": theme.colors.primary,
+        "--pdp-primary-hover": theme.colors.primaryHover,
+        "--pdp-primary-text": theme.colors.primaryText,
+        "--pdp-surface-bg": theme.colors.background,
+        "--pdp-surface-subtle": theme.colors.surface,
+        "--pdp-surface-border": theme.colors.border,
+        "--pdp-hover-bg": theme.colors.backgroundHover,
+        "--pdp-text-primary": theme.colors.textPrimary,
+        "--pdp-text-secondary": theme.colors.textSecondary,
+        "--pdp-text-muted": theme.colors.textSecondary,
+        "--pdp-text-disabled": theme.colors.textDisabled,
+        "--pdp-disabled-bg": theme.colors.surface,
+        "--pdp-holiday-color": theme.colors.holiday,
+        "--pdp-holiday-bg": theme.colors.holidayBackground,
+        "--pdp-range-between-bg": theme.colors.rangeBackground,
+        "--pdp-today-border": theme.colors.todayBorder,
+        "--pdp-border-radius": theme.radii.lg,
+        "--pdp-shadow": theme.shadows.lg,
+        colorScheme: themeMode,
+      }) as React.CSSProperties,
+    [theme, themeMode],
+  );
 
   useEffect(() => {
     if (variant === "inline") {
@@ -633,6 +661,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       onClick={(e) => e.stopPropagation()}
       className={classNames?.calendar}
       style={{
+        ...themeVariables,
         position: variant === "popover" ? "fixed" : isModal ? "relative" : "static",
         top: variant === "popover" ? (popoverPosition?.top ?? 0) : undefined,
         left: variant === "popover" ? (popoverPosition?.left ?? 0) : undefined,
@@ -763,6 +792,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       ref={containerRef}
       className={className ?? classNames?.root}
       style={{
+        ...themeVariables,
         position: "relative",
         display: "inline-block",
         maxWidth: "100%",

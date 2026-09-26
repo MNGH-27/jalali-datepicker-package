@@ -9,6 +9,7 @@ import {
 } from "@testing-library/react";
 import { JalaliDatePicker } from "../../src/components/JalaliDatePicker";
 import { DualMonthCalendar } from "../../src/components/dual-calendar/DualMonthCalendar";
+import { DatePickerThemeProvider } from "../../src/theme/ThemeProvider";
 
 afterEach(() => cleanup());
 
@@ -124,5 +125,30 @@ describe("responsive calendar layouts", () => {
     expect(calendar.style.left).toBe("444px");
 
     rectSpy.mockRestore();
+  });
+
+  it("carries dark theme tokens into the popover portal", async () => {
+    render(
+      React.createElement(
+        DatePickerThemeProvider,
+        { mode: "dark" },
+        React.createElement(JalaliDatePicker, { variant: "popover" }),
+      ),
+    );
+    fireEvent.click(screen.getByRole("textbox"));
+
+    const calendar = await screen.findByRole("region", {
+      name: "تقویم شمسی",
+    });
+    await waitFor(() => expect(calendar.style.visibility).toBe("visible"));
+
+    expect(calendar.parentElement).toBe(document.body);
+    expect(calendar.style.getPropertyValue("--pdp-surface-bg")).toBe(
+      "#0f172a",
+    );
+    expect(calendar.style.getPropertyValue("--pdp-text-primary")).toBe(
+      "#f8fafc",
+    );
+    expect(calendar.style.colorScheme).toBe("dark");
   });
 });
