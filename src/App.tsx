@@ -274,7 +274,7 @@ ${optionalSampleProps ? `${optionalSampleProps}\n` : ""}        placeholder="YYY
                 <div className="jdp-brand-line">
                   <h1 className="jdp-title">@mngh/jalali-datepicker</h1>
                   <span className="jdp-badge">PLAYGROUND</span>
-                  <span className="jdp-badge version">v1.2.2</span>
+                  <span className="jdp-badge version">v1.2.3</span>
                 </div>
                 <div className="jdp-subtitle">
                   Interactive configuration and live component preview
