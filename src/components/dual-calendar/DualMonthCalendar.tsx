@@ -336,11 +336,12 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
           ...styles?.grid,
         }}
       >
-        {grid.map((cell) => (
+        {grid.map((cell, index) => (
           <DayCell
             key={`${cell.jalali.year}-${cell.jalali.month}-${cell.jalali.day}`}
             cell={cell}
             digitType={digitType}
+            gridColumnIndex={index % 7}
             classNames={classNames}
             styles={styles}
             tabIndex={0}

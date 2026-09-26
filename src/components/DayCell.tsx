@@ -15,6 +15,8 @@ export interface DayCellProps {
   isHoliday?: boolean;
   holidayTitle?: string;
   events?: CalendarEvent[];
+  /** Zero-based column index inside the 7-column calendar grid. */
+  gridColumnIndex?: number;
   tabIndex?: number;
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;
@@ -29,6 +31,7 @@ export const DayCell: React.FC<DayCellProps> = ({
   isHoliday = false,
   holidayTitle,
   events = [],
+  gridColumnIndex,
   tabIndex = -1,
   classNames,
   styles,
@@ -57,6 +60,8 @@ export const DayCell: React.FC<DayCellProps> = ({
       : toLatinDigits(dayNumber.toString());
 
   const isInteractive = !isDisabled && isCurrentMonth;
+  const tooltipAlignment =
+    gridColumnIndex === 0 ? "start" : gridColumnIndex === 6 ? "end" : "center";
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -269,11 +274,21 @@ export const DayCell: React.FC<DayCellProps> = ({
           style={{
             position: "absolute",
             bottom: "calc(100% + 7px)",
-            left: "50%",
-            transform: "translateX(-50%)",
+            insetInlineStart:
+              tooltipAlignment === "start"
+                ? 0
+                : tooltipAlignment === "center"
+                  ? "50%"
+                  : undefined,
+            insetInlineEnd: tooltipAlignment === "end" ? 0 : undefined,
+            transform:
+              tooltipAlignment === "center" ? "translateX(-50%)" : "none",
             zIndex: 1050,
             pointerEvents: "none",
-            whiteSpace: "nowrap",
+            width: "max-content",
+            maxWidth: "min(240px, calc(100vw - 32px))",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
             backgroundColor: "var(--pdp-tooltip-bg, #0f172a)",
             color: "var(--pdp-tooltip-text, #ffffff)",
             padding: "5px 9px",
@@ -305,8 +320,18 @@ export const DayCell: React.FC<DayCellProps> = ({
             style={{
               position: "absolute",
               top: "100%",
-              left: "50%",
-              transform: "translateX(-50%)",
+              insetInlineStart:
+                tooltipAlignment === "start"
+                  ? "calc(var(--pdp-cell-size, 34px) / 2 - 4px)"
+                  : tooltipAlignment === "center"
+                    ? "50%"
+                    : undefined,
+              insetInlineEnd:
+                tooltipAlignment === "end"
+                  ? "calc(var(--pdp-cell-size, 34px) / 2 - 4px)"
+                  : undefined,
+              transform:
+                tooltipAlignment === "center" ? "translateX(-50%)" : "none",
               borderWidth: "4px",
               borderStyle: "solid",
               borderColor:

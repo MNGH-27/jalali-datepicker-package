@@ -31,6 +31,35 @@ describe("disabled calendar states", () => {
     expect(day.style.opacity).toBe("0.25");
   });
 
+  it("keeps tooltips inside the calendar on an edge column", () => {
+    render(
+      React.createElement(DayCell, {
+        cell: {
+          jalali: { year: 1405, month: 6, day: 20 },
+          gregorianDate: jalaliToGregorian(1405, 6, 20),
+          dayNumber: 20,
+          isCurrentMonth: true,
+          isToday: false,
+          isSelected: false,
+          isDisabled: false,
+        },
+        gridColumnIndex: 6,
+        isHoliday: true,
+        holidayTitle: "جمعه (تعطیل پایان هفته)",
+        onSelect: () => undefined,
+      }),
+    );
+
+    fireEvent.mouseEnter(
+      screen.getByRole("gridcell", { name: /1405\/7\/20/ }).parentElement!,
+    );
+
+    const tooltip = screen.getByRole("tooltip");
+    expect(tooltip.style.insetInlineEnd).toBe("0px");
+    expect(tooltip.style.transform).toBe("none");
+    expect(tooltip.style.maxWidth).toContain("240px");
+  });
+
   it("disables unavailable months and years", () => {
     render(
       React.createElement(MonthYearPicker, {

@@ -638,6 +638,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               isHoliday={Boolean(holidayInfo)}
               holidayTitle={holidayInfo?.title}
               events={dayEvents}
+              gridColumnIndex={index % 7}
               classNames={classNames}
               styles={styles}
               tabIndex={getCellTabIndex(cell.jalali)}
