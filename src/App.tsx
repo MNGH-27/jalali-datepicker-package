@@ -652,17 +652,47 @@ ${optionalSampleProps ? `${optionalSampleProps}\n` : ""}        placeholder="YYY
                     This snippet updates with the playground configuration.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className={`jdp-copy-button ${copied ? "copied" : ""}`}
-                  onClick={handleCopySample}
-                >
-                  {copied ? "✓ Copied" : "Copy code"}
-                </button>
               </div>
-              <pre className="jdp-code jdp-sample-code">
-                <code>{sampleCode}</code>
-              </pre>
+              <div className="jdp-editor">
+                <div className="jdp-editor-titlebar">
+                  <div className="jdp-window-controls" aria-hidden="true">
+                    <span className="close" />
+                    <span className="minimize" />
+                    <span className="maximize" />
+                  </div>
+                  <div className="jdp-editor-tab">
+                    <span className="jdp-ts-icon">TS</span>
+                    <span>Example.tsx</span>
+                    <span className="jdp-unsaved-dot" aria-hidden="true">●</span>
+                  </div>
+                  <button
+                    type="button"
+                    className={`jdp-copy-button ${copied ? "copied" : ""}`}
+                    onClick={handleCopySample}
+                    title="Copy sample code"
+                  >
+                    <span aria-hidden="true">{copied ? "✓" : "⧉"}</span>
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <div className="jdp-editor-breadcrumb">
+                  <span>src</span><span>›</span><span>Example.tsx</span>
+                </div>
+                <div className="jdp-editor-body">
+                  <div className="jdp-line-numbers" aria-hidden="true">
+                    {sampleCode.split("\n").map((_, index) => (
+                      <span key={index}>{index + 1}</span>
+                    ))}
+                  </div>
+                  <pre className="jdp-sample-code">
+                    <code>{sampleCode}</code>
+                  </pre>
+                </div>
+                <div className="jdp-editor-statusbar" aria-hidden="true">
+                  <span>⑂ demo*</span>
+                  <span>Ln 1, Col 1&nbsp;&nbsp; Spaces: 2&nbsp;&nbsp; UTF-8&nbsp;&nbsp; TypeScript React</span>
+                </div>
+              </div>
               <span className="jdp-sr-only" aria-live="polite">
                 {copied ? "Sample code copied to clipboard" : ""}
               </span>
