@@ -3,8 +3,12 @@ import React, { useState } from "react";
 import {
   JalaliDatePicker,
   DatePickerThemeProvider,
+  getDaysInJalaliMonth,
+  jalaliToJsDate,
   type CalendarEvent,
   type CustomHolidayRule,
+  type JalaliDate,
+  type JalaliMonthIndex,
 } from "@mngh/jalali-datepicker";
 
 import "./App.css";
@@ -12,6 +16,24 @@ import "./App.css";
 type Mode = "single" | "range" | "multiple";
 type Variant = "popover" | "inline" | "modal";
 type DigitType = "latin" | "persian";
+type RangeLimit = { year: number; month: number; day: number };
+
+const formatRangeLimit = ({ year, month, day }: RangeLimit) =>
+  `${year}/${String(month).padStart(2, "0")}/${String(day).padStart(2, "0")}`;
+
+const toJalaliLimit = ({ year, month, day }: RangeLimit): JalaliDate | null => {
+  if (!Number.isInteger(year) || year < 1200 || year > 1600) return null;
+  if (!Number.isInteger(month) || month < 1 || month > 12) return null;
+  const monthIndex = (month - 1) as JalaliMonthIndex;
+  if (
+    !Number.isInteger(day) ||
+    day < 1 ||
+    day > getDaysInJalaliMonth(year, monthIndex)
+  ) {
+    return null;
+  }
+  return { year, month: monthIndex, day };
+};
 
 function ToggleRow({
   title,
@@ -58,6 +80,16 @@ export function App() {
   const [useDateLimits, setUseDateLimits] = useState(true);
   const [disableFridays, setDisableFridays] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [minLimit, setMinLimit] = useState<RangeLimit>({
+    year: 1405,
+    month: 6,
+    day: 19,
+  });
+  const [maxLimit, setMaxLimit] = useState<RangeLimit>({
+    year: 1406,
+    month: 3,
+    day: 30,
+  });
 
   const [singleValue, setSingleValue] = useState<Date | null>(new Date());
   const [rangeValue, setRangeValue] = useState<[Date | null, Date | null]>([
@@ -107,8 +139,27 @@ export function App() {
         ? rangeValue
         : multiValue;
 
-  const minDate = useDateLimits ? new Date(2026, 8, 10) : undefined;
-  const maxDate = useDateLimits ? new Date(2027, 5, 20) : undefined;
+  const minJalaliLimit = toJalaliLimit(minLimit);
+  const maxJalaliLimit = toJalaliLimit(maxLimit);
+  const rawMinDate = minJalaliLimit
+    ? jalaliToJsDate(minJalaliLimit)
+    : undefined;
+  const rawMaxDate = maxJalaliLimit
+    ? jalaliToJsDate(maxJalaliLimit)
+    : undefined;
+  const hasValidDateRange = Boolean(
+    rawMinDate && rawMaxDate && rawMinDate <= rawMaxDate,
+  );
+  const minDate = useDateLimits && hasValidDateRange ? rawMinDate : undefined;
+  const maxDate = useDateLimits && hasValidDateRange ? rawMaxDate : undefined;
+
+  const updateRangeLimit = (
+    setter: React.Dispatch<React.SetStateAction<RangeLimit>>,
+    field: keyof RangeLimit,
+    value: string,
+  ) => {
+    setter((current) => ({ ...current, [field]: Number(value) }));
+  };
 
   const handleDateChange = (value: any) => {
     if (mode === "single") setSingleValue(value);
@@ -166,8 +217,12 @@ export function App() {
   const initialValue =
     mode === "single" ? "null" : mode === "range" ? "[null, null]" : "[]";
   const optionalSampleProps = [
-    useDateLimits && "        minDate={new Date(2026, 8, 10)}",
-    useDateLimits && "        maxDate={new Date(2027, 5, 20)}",
+    useDateLimits &&
+      hasValidDateRange &&
+      `        minDate={jalaliToJsDate({ year: ${minLimit.year}, month: ${minLimit.month - 1}, day: ${minLimit.day} })}`,
+    useDateLimits &&
+      hasValidDateRange &&
+      `        maxDate={jalaliToJsDate({ year: ${maxLimit.year}, month: ${maxLimit.month - 1}, day: ${maxLimit.day} })}`,
     disableFridays &&
       "        isDateDisabled={(date) => date.getDay() === 5}",
   ]
@@ -177,7 +232,7 @@ export function App() {
 import {
   DatePickerThemeProvider,
   JalaliDatePicker,
-} from "@mngh/jalali-datepicker";
+${useDateLimits && hasValidDateRange ? "  jalaliToJsDate,\n" : ""}} from "@mngh/jalali-datepicker";
 
 export default function Example() {
   const [value, setValue] = useState<${valueType}>(${initialValue});
@@ -370,6 +425,59 @@ ${optionalSampleProps ? `${optionalSampleProps}\n` : ""}        placeholder="YYY
                   onChange={setDisableFridays}
                 />
               </div>
+
+              {useDateLimits && (
+                <div
+                  className={`jdp-range-config ${hasValidDateRange ? "" : "invalid"}`}
+                >
+                  <div className="jdp-range-config-head">
+                    <div>
+                      <div className="jdp-section-label">Allowed date range</div>
+                      <div className="jdp-range-hint">Jalali year / month / day</div>
+                    </div>
+                    <span className="jdp-range-badge">min → max</span>
+                  </div>
+
+                  {(
+                    [
+                      ["Start", minLimit, setMinLimit],
+                      ["End", maxLimit, setMaxLimit],
+                    ] as const
+                  ).map(([label, limit, setter]) => (
+                    <div className="jdp-range-row" key={label}>
+                      <span className="jdp-range-row-label">{label}</span>
+                      <div className="jdp-range-date">
+                        {(["year", "month", "day"] as const).map((field) => (
+                          <input
+                            key={field}
+                            className="jdp-input jdp-range-part"
+                            type="number"
+                            aria-label={`${label} ${field}`}
+                            min={field === "year" ? 1200 : 1}
+                            max={field === "year" ? 1600 : field === "month" ? 12 : 31}
+                            value={limit[field]}
+                            onChange={(event) =>
+                              updateRangeLimit(setter, field, event.target.value)
+                            }
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="jdp-range-summary">
+                    {hasValidDateRange ? (
+                      <>
+                        <span>{formatRangeLimit(minLimit)}</span>
+                        <span aria-hidden="true">→</span>
+                        <span>{formatRangeLimit(maxLimit)}</span>
+                      </>
+                    ) : (
+                      <span>Enter a valid start date before the end date.</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             <section className="jdp-card jdp-card-pad">
@@ -567,6 +675,11 @@ ${optionalSampleProps ? `${optionalSampleProps}\n` : ""}        placeholder="YYY
                   <p className="jdp-card-desc">
                     The component below uses the current configuration.
                   </p>
+                  {useDateLimits && hasValidDateRange && (
+                    <p className="jdp-preview-range">
+                      Allowed: {formatRangeLimit(minLimit)} → {formatRangeLimit(maxLimit)}
+                    </p>
+                  )}
                 </div>
                 <div className="jdp-preview-meta">
                   <span className="jdp-chip primary">{variant}</span>

@@ -507,6 +507,96 @@ select:focus-visible {
   transform: translateX(14px);
 }
 
+.jdp-range-config {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent-soft) 38%, var(--surface));
+}
+
+.jdp-range-config.invalid {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+
+.jdp-range-config-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.jdp-range-config-head .jdp-section-label {
+  margin-bottom: 2px;
+  color: var(--text);
+}
+
+.jdp-range-hint {
+  color: var(--muted);
+  font-size: 9.5px;
+}
+
+.jdp-range-badge {
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.jdp-range-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.jdp-range-row + .jdp-range-row {
+  margin-top: 7px;
+}
+
+.jdp-range-row-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.jdp-range-date {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 6px;
+}
+
+.jdp-range-part {
+  height: 32px;
+  padding-inline: 6px;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+}
+
+.jdp-range-summary {
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--accent) 16%, var(--border));
+  color: var(--accent-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.jdp-range-config.invalid .jdp-range-summary {
+  color: var(--danger);
+  text-align: center;
+}
+
 .jdp-action {
   width: 100%;
   height: 36px;
@@ -685,6 +775,14 @@ select:focus-visible {
   color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 10px;
+}
+
+.jdp-preview-range {
+  margin: 6px 0 0;
+  color: var(--accent-strong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .jdp-feature-grid {
