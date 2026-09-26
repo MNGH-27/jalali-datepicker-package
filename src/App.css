@@ -220,6 +220,12 @@ select:focus-visible {
   letter-spacing: 0.03em;
 }
 
+.jdp-badge.version {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .jdp-subtitle {
   margin-top: 3px;
   color: var(--muted);
@@ -681,6 +687,96 @@ select:focus-visible {
   font-size: 10px;
 }
 
+.jdp-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.jdp-feature-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  box-shadow: var(--shadow);
+}
+
+.jdp-feature-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: 16px;
+  font-weight: 750;
+}
+
+.jdp-feature-card h3 {
+  margin: 1px 0 4px;
+  color: var(--text);
+  font-size: 11.5px;
+  line-height: 1.3;
+}
+
+.jdp-feature-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.jdp-copy-button {
+  min-width: 88px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  transition: 0.16s ease;
+}
+
+.jdp-copy-button:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.jdp-copy-button.copied {
+  border-color: color-mix(in srgb, var(--success) 45%, var(--border));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
+  color: var(--success);
+}
+
+.jdp-sample-code {
+  max-height: 430px;
+  white-space: pre;
+  overflow-wrap: normal;
+  tab-size: 2;
+}
+
+.jdp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .jdp-code {
   margin: 0;
   max-height: 220px;
@@ -717,6 +813,10 @@ select:focus-visible {
   .jdp-preview-stage {
     min-height: 470px;
     padding: 34px 20px;
+  }
+
+  .jdp-feature-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -782,13 +882,23 @@ select:focus-visible {
   .jdp-preview-stage {
     min-height: 410px;
     padding: 24px 10px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
   }
 
   .jdp-preview-stage-inner {
-    width: max-content;
-    min-width: min(100%, 310px);
+    width: 100%;
+    min-width: 0;
+  }
+
+  .jdp-feature-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .jdp-feature-card {
+    padding: 12px;
+  }
+
+  .jdp-sample-card .jdp-output-head {
+    align-items: flex-start;
   }
 
   .jdp-select-grid,

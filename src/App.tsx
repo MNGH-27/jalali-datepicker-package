@@ -1,5 +1,5 @@
 // demo/src/App.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   JalaliDatePicker,
   DatePickerThemeProvider,
@@ -46,16 +46,6 @@ function ToggleRow({
 
 export function App() {
   const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
-  const [isNarrow, setIsNarrow] = useState(false);
-
-  useEffect(() => {
-    const media = window.matchMedia("(max-width: 560px)");
-    const update = () => setIsNarrow(media.matches);
-    update();
-    media.addEventListener?.("change", update);
-    return () => media.removeEventListener?.("change", update);
-  }, []);
-
   const [mode, setMode] = useState<Mode>("single");
   const [variant, setVariant] = useState<Variant>("popover");
   const [digitType, setDigitType] = useState<DigitType>("latin");
@@ -65,6 +55,9 @@ export function App() {
   const [showHolidays, setShowHolidays] = useState(true);
   const [allowClear, setAllowClear] = useState(true);
   const [showFooter, setShowFooter] = useState(true);
+  const [useDateLimits, setUseDateLimits] = useState(true);
+  const [disableFridays, setDisableFridays] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [singleValue, setSingleValue] = useState<Date | null>(new Date());
   const [rangeValue, setRangeValue] = useState<[Date | null, Date | null]>([
@@ -114,7 +107,8 @@ export function App() {
         ? rangeValue
         : multiValue;
 
-  const effectiveMonths: 1 | 2 = isNarrow ? 1 : numberOfMonths;
+  const minDate = useDateLimits ? new Date(2026, 8, 10) : undefined;
+  const maxDate = useDateLimits ? new Date(2027, 5, 20) : undefined;
 
   const handleDateChange = (value: any) => {
     if (mode === "single") setSingleValue(value);
@@ -163,6 +157,57 @@ export function App() {
 
   const isDark = themeMode === "dark";
 
+  const valueType =
+    mode === "single"
+      ? "Date | null"
+      : mode === "range"
+        ? "[Date | null, Date | null]"
+        : "Date[]";
+  const initialValue =
+    mode === "single" ? "null" : mode === "range" ? "[null, null]" : "[]";
+  const optionalSampleProps = [
+    useDateLimits && "        minDate={new Date(2026, 8, 10)}",
+    useDateLimits && "        maxDate={new Date(2027, 5, 20)}",
+    disableFridays &&
+      "        isDateDisabled={(date) => date.getDay() === 5}",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const sampleCode = `import { useState } from "react";
+import {
+  DatePickerThemeProvider,
+  JalaliDatePicker,
+} from "@mngh/jalali-datepicker";
+
+export default function Example() {
+  const [value, setValue] = useState<${valueType}>(${initialValue});
+
+  return (
+    <DatePickerThemeProvider mode="${themeMode}">
+      <JalaliDatePicker
+        mode="${mode}"
+        variant="${variant}"
+        value={value}
+        onChange={setValue}
+        digitType="${digitType}"
+        numberOfMonths={${numberOfMonths}}
+        enableTime={${enableTime}}
+        showSeconds={${showSeconds}}
+        showHolidays={${showHolidays}}
+        allowClear={${allowClear}}
+        showFooter={${showFooter}}
+${optionalSampleProps ? `${optionalSampleProps}\n` : ""}        placeholder="YYYY/MM/DD"
+      />
+    </DatePickerThemeProvider>
+  );
+}`;
+
+  const handleCopySample = async () => {
+    await navigator.clipboard.writeText(sampleCode);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
+  };
+
   return (
     <DatePickerThemeProvider mode={themeMode}>
       <div className={`jdp-demo ${isDark ? "is-dark" : ""}`}>
@@ -174,6 +219,7 @@ export function App() {
                 <div className="jdp-brand-line">
                   <h1 className="jdp-title">@mngh/jalali-datepicker</h1>
                   <span className="jdp-badge">PLAYGROUND</span>
+                  <span className="jdp-badge version">v1.2.2</span>
                 </div>
                 <div className="jdp-subtitle">
                   Interactive configuration and live component preview
@@ -266,18 +312,13 @@ export function App() {
                       }
                     >
                       <option value={1}>1 month</option>
-                      <option value={2} disabled={isNarrow}>
-                        2 months
-                      </option>
+                      <option value={2}>2 months</option>
                     </select>
                   </label>
                 </div>
-                {isNarrow && numberOfMonths === 2 && (
-                  <div className="jdp-note">
-                    Two-month view is automatically reduced to one month on
-                    small screens.
-                  </div>
-                )}
+                <div className="jdp-note">
+                  Two-month view now stacks automatically on small screens.
+                </div>
               </div>
 
               <div className="jdp-divider" />
@@ -315,6 +356,18 @@ export function App() {
                   code="showFooter"
                   checked={showFooter}
                   onChange={setShowFooter}
+                />
+                <ToggleRow
+                  title="Date limits"
+                  code="minDate / maxDate"
+                  checked={useDateLimits}
+                  onChange={setUseDateLimits}
+                />
+                <ToggleRow
+                  title="Disable Fridays"
+                  code="isDateDisabled"
+                  checked={disableFridays}
+                  onChange={setDisableFridays}
                 />
               </div>
             </section>
@@ -519,7 +572,7 @@ export function App() {
                   <span className="jdp-chip primary">{variant}</span>
                   <span className="jdp-chip">{mode}</span>
                   <span className="jdp-chip">
-                    {effectiveMonths} month{effectiveMonths > 1 ? "s" : ""}
+                    {numberOfMonths} month{numberOfMonths > 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
@@ -527,13 +580,20 @@ export function App() {
               <div className="jdp-preview-stage">
                 <div className="jdp-preview-stage-inner">
                   <JalaliDatePicker
-                    key={`${variant}-${effectiveMonths}`}
+                    key={`${variant}-${numberOfMonths}`}
                     mode={mode}
                     variant={variant}
                     value={currentValue as any}
                     onChange={handleDateChange}
                     digitType={digitType}
-                    numberOfMonths={effectiveMonths}
+                    numberOfMonths={numberOfMonths}
+                    minDate={minDate}
+                    maxDate={maxDate}
+                    isDateDisabled={
+                      disableFridays
+                        ? (date) => date.getDay() === 5
+                        : undefined
+                    }
                     enableTime={enableTime}
                     showSeconds={showSeconds}
                     showHolidays={showHolidays}
@@ -547,6 +607,30 @@ export function App() {
               </div>
             </section>
 
+            <section className="jdp-feature-grid" aria-label="New features">
+              <article className="jdp-feature-card">
+                <span className="jdp-feature-icon">↔</span>
+                <div>
+                  <h3>Responsive layout</h3>
+                  <p>Dual calendars stack and popovers stay inside the viewport.</p>
+                </div>
+              </article>
+              <article className="jdp-feature-card">
+                <span className="jdp-feature-icon">◐</span>
+                <div>
+                  <h3>Portal-safe theme</h3>
+                  <p>Popover and modal surfaces inherit light or dark tokens.</p>
+                </div>
+              </article>
+              <article className="jdp-feature-card">
+                <span className="jdp-feature-icon">⊘</span>
+                <div>
+                  <h3>Range constraints</h3>
+                  <p>Invalid days, months and years are visibly disabled.</p>
+                </div>
+              </article>
+            </section>
+
             <section className="jdp-card">
               <div className="jdp-output-head">
                 <div>
@@ -558,6 +642,30 @@ export function App() {
               <pre className="jdp-code">
                 {JSON.stringify(currentValue, null, 2) || "null"}
               </pre>
+            </section>
+
+            <section className="jdp-card jdp-sample-card">
+              <div className="jdp-output-head">
+                <div>
+                  <h2 className="jdp-card-title">Copy-ready example</h2>
+                  <p className="jdp-card-desc">
+                    This snippet updates with the playground configuration.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={`jdp-copy-button ${copied ? "copied" : ""}`}
+                  onClick={handleCopySample}
+                >
+                  {copied ? "✓ Copied" : "Copy code"}
+                </button>
+              </div>
+              <pre className="jdp-code jdp-sample-code">
+                <code>{sampleCode}</code>
+              </pre>
+              <span className="jdp-sr-only" aria-live="polite">
+                {copied ? "Sample code copied to clipboard" : ""}
+              </span>
             </section>
           </div>
         </main>
