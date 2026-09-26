@@ -73,6 +73,42 @@ describe("Headless Hook - useJalaliDatePicker", () => {
       // Should automatically order [sampleDate1, sampleDate2]
       expect(result.current.selected).toEqual([sampleDate1, sampleDate2]);
     });
+
+    it("orders a reverse range across month and year boundaries", () => {
+      const later: JalaliDate = { year: 1406, month: 1, day: 5 };
+      const earlier: JalaliDate = { year: 1404, month: 11, day: 29 };
+      const { result } = renderHook(() =>
+        useJalaliDatePicker({ mode: "range" }),
+      );
+
+      act(() => result.current.selectDate(later));
+      act(() => result.current.selectDate(earlier));
+
+      expect(result.current.selected).toEqual([earlier, later]);
+    });
+
+    it("ignores disabled range endpoints", () => {
+      const onChange = vi.fn();
+      const { result } = renderHook(() =>
+        useJalaliDatePicker({
+          mode: "range",
+          minDate: sampleDate1,
+          maxDate: sampleDate2,
+          isDateDisabled: (date) => date.day === 15,
+          onChange,
+        }),
+      );
+
+      act(() =>
+        result.current.selectDate({ year: 1405, month: 0, day: 9 }),
+      );
+      act(() =>
+        result.current.selectDate({ year: 1405, month: 0, day: 15 }),
+      );
+
+      expect(result.current.selected).toEqual([null, null]);
+      expect(onChange).not.toHaveBeenCalled();
+    });
   });
 
   describe("Multiple Mode", () => {

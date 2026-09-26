@@ -33,7 +33,7 @@ export const Weekdays: React.FC<WeekdaysProps> = ({
       className={classNames?.weekdays}
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(7, var(--pdp-cell-size, 34px))",
+        gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
         gap: "4px",
         justifyContent: "center",
         alignItems: "center",
@@ -53,7 +53,8 @@ export const Weekdays: React.FC<WeekdaysProps> = ({
             aria-label={day}
             className={classNames?.weekdayCell}
             style={{
-              width: "var(--pdp-cell-size, 34px)",
+              width: "100%",
+              minWidth: 0,
               height: "24px",
               display: "flex",
               alignItems: "center",

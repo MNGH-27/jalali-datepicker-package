@@ -7,7 +7,10 @@ import type {
 } from "../../core/types";
 import type { JalaliDateRange } from "../../hooks/types";
 import { getTodayJalali, isSameJalaliDay } from "../../core/jalali-math";
-import { generateJalaliCalendarGrid } from "../../core/calendar-grid";
+import {
+  generateJalaliCalendarGrid,
+  toJalaliDate,
+} from "../../core/calendar-grid";
 import {
   compareJalaliDates,
   isJalaliDateBetween,
@@ -18,6 +21,7 @@ import { Weekdays } from "../Weekdays";
 import { DayCell } from "../DayCell";
 import { useTheme } from "../../theme/ThemeProvider";
 import { mergeClassNames } from "../../theme/style-utils";
+import { isJalaliMonthSelectable } from "../../core/date-availability";
 
 export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
   value,
@@ -72,8 +76,48 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
     };
   }, [viewState]);
 
+  const prevMonthState = useMemo<{
+    year: number;
+    month: JalaliMonthIndex;
+  }>(() => {
+    if (viewState.month === 0) {
+      return { year: viewState.year - 1, month: 11 };
+    }
+    return {
+      year: viewState.year,
+      month: (viewState.month - 1) as JalaliMonthIndex,
+    };
+  }, [viewState]);
+
+  const minJalali = useMemo(
+    () => (minDate ? toJalaliDate(minDate) : undefined),
+    [minDate],
+  );
+  const maxJalali = useMemo(
+    () => (maxDate ? toJalaliDate(maxDate) : undefined),
+    [maxDate],
+  );
+  const isPrevDisabled = !isJalaliMonthSelectable(
+    prevMonthState.year,
+    prevMonthState.month,
+    { minDate: minJalali, maxDate: maxJalali },
+  );
+  const monthAfterSecond =
+    nextMonthState.month === 11
+      ? { year: nextMonthState.year + 1, month: 0 as JalaliMonthIndex }
+      : {
+          year: nextMonthState.year,
+          month: (nextMonthState.month + 1) as JalaliMonthIndex,
+        };
+  const isNextDisabled = !isJalaliMonthSelectable(
+    monthAfterSecond.year,
+    monthAfterSecond.month,
+    { minDate: minJalali, maxDate: maxJalali },
+  );
+
   // 4. Synchronized Navigation (moves both months together)
   const handlePrevMonth = () => {
+    if (isPrevDisabled) return;
     setViewState((prev) => {
       if (prev.month === 0) return { year: prev.year - 1, month: 11 };
       return { year: prev.year, month: (prev.month - 1) as JalaliMonthIndex };
@@ -81,6 +125,7 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
   };
 
   const handleNextMonth = () => {
+    if (isNextDisabled) return;
     setViewState((prev) => {
       if (prev.month === 11) return { year: prev.year + 1, month: 0 };
       return { year: prev.year, month: (prev.month + 1) as JalaliMonthIndex };
@@ -181,7 +226,9 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
         flexDirection: "column",
         gap: "8px",
         width: "var(--pdp-calendar-pane-width, 276px)",
-        minWidth: "var(--pdp-calendar-pane-width, 276px)",
+        maxWidth: "100%",
+        minWidth: 0,
+        flex: "1 1 var(--pdp-calendar-pane-width, 276px)",
         ...styles?.calendarPane,
       }}
     >
@@ -202,7 +249,12 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
             type="button"
             aria-label="ماه قبل"
             onClick={handlePrevMonth}
-            className={classNames?.navButton}
+            disabled={isPrevDisabled}
+            aria-disabled={isPrevDisabled}
+            className={mergeClassNames(
+              classNames?.navButton,
+              isPrevDisabled && classNames?.disabledNavButton,
+            )}
             style={{
               width: "28px",
               height: "28px",
@@ -210,8 +262,10 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
               border: `1px solid ${theme.colors.border}`,
               backgroundColor: theme.colors.background,
               color: theme.colors.textPrimary,
-              cursor: "pointer",
+              cursor: isPrevDisabled ? "not-allowed" : "pointer",
+              opacity: isPrevDisabled ? 0.38 : 1,
               ...styles?.navButton,
+              ...(isPrevDisabled ? styles?.disabledNavButton : undefined),
             }}
           >
             {direction === "rtl" ? "›" : "‹"}
@@ -235,7 +289,12 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
             type="button"
             aria-label="ماه بعد"
             onClick={handleNextMonth}
-            className={classNames?.navButton}
+            disabled={isNextDisabled}
+            aria-disabled={isNextDisabled}
+            className={mergeClassNames(
+              classNames?.navButton,
+              isNextDisabled && classNames?.disabledNavButton,
+            )}
             style={{
               width: "28px",
               height: "28px",
@@ -243,8 +302,10 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
               border: `1px solid ${theme.colors.border}`,
               backgroundColor: theme.colors.background,
               color: theme.colors.textPrimary,
-              cursor: "pointer",
+              cursor: isNextDisabled ? "not-allowed" : "pointer",
+              opacity: isNextDisabled ? 0.38 : 1,
               ...styles?.navButton,
+              ...(isNextDisabled ? styles?.disabledNavButton : undefined),
             }}
           >
             {direction === "rtl" ? "‹" : "›"}
@@ -268,8 +329,9 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
         className={classNames?.grid}
         style={{
           display: "grid",
-          width: "var(--pdp-calendar-pane-width, 276px)",
-          gridTemplateColumns: "repeat(7, var(--pdp-cell-size, 36px))",
+          width: "100%",
+          minWidth: 0,
+          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
           gap: "var(--pdp-cell-gap, 4px)",
           ...styles?.grid,
         }}
@@ -305,26 +367,21 @@ export const DualMonthCalendar: React.FC<DualMonthCalendarProps> = ({
           flexWrap: "wrap",
           gap: "24px",
           padding: "16px",
+          boxSizing: "border-box",
           backgroundColor: theme.colors.background,
           color: theme.colors.textPrimary,
           borderRadius: theme.radii.lg,
           border: `1px solid ${theme.colors.border}`,
           boxShadow: theme.shadows.lg,
-          width: "fit-content",
+          width:
+            "calc(var(--pdp-calendar-pane-width, 276px) + var(--pdp-calendar-pane-width, 276px) + 56px)",
+          maxWidth: "100%",
           ...style,
           ...styles?.calendar,
         } as React.CSSProperties
       }
     >
       {renderMonthPane(viewState.year, viewState.month, leftGrid, true)}
-      <div
-        className={classNames?.paneDivider}
-        style={{
-          width: "1px",
-          backgroundColor: theme.colors.border,
-          ...styles?.paneDivider,
-        }}
-      />
       {renderMonthPane(
         nextMonthState.year,
         nextMonthState.month,

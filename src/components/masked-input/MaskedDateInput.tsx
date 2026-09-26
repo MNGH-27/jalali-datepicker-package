@@ -101,6 +101,8 @@ export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
         position: "relative",
         display: "inline-flex",
         alignItems: "center",
+        width: "100%",
+        maxWidth: "180px",
         ...wrapperStyle,
       }}
     >
@@ -114,6 +116,9 @@ export const MaskedDateInput: React.FC<MaskedDateInputProps> = ({
         onChange={handleInputChange}
         style={{
           width: "180px",
+          maxWidth: "100%",
+          minWidth: 0,
+          boxSizing: "border-box",
           padding: "8px 12px",
           paddingInlineEnd: clearable && text ? "32px" : "12px",
           borderRadius: theme.radii.sm,

@@ -2,17 +2,26 @@
 import React, { useState } from "react";
 import { PERSIAN_MONTH_NAMES } from "../core/constants";
 import { toPersianDigits } from "../formatters/persian-digits";
-import type { JalaliMonthIndex } from "../core/types";
+import type { JalaliDate, JalaliMonthIndex } from "../core/types";
 import type {
   DatePickerClassNames,
   DatePickerStyles,
 } from "../theme/style-slots";
+import {
+  isJalaliMonthSelectable,
+  isJalaliYearSelectable,
+  type JalaliDateConstraints,
+} from "../core/date-availability";
+import { mergeClassNames } from "../theme/style-utils";
 
 export interface MonthYearPickerProps {
   currentYear: number;
   currentMonth: number;
   onSelectMonth: (month: JalaliMonthIndex) => void;
   onSelectYear: (year: number) => void;
+  minDate?: JalaliDate;
+  maxDate?: JalaliDate;
+  isDateDisabled?: (date: JalaliDate) => boolean;
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;
 }
@@ -22,6 +31,9 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
   currentMonth,
   onSelectMonth,
   onSelectYear,
+  minDate,
+  maxDate,
+  isDateDisabled,
   classNames,
   styles,
 }) => {
@@ -36,7 +48,30 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
     (_, i) => decadeStartYear - 1 + i,
   );
 
+  const constraints: JalaliDateConstraints = {
+    minDate,
+    maxDate,
+    isDateDisabled,
+  };
+  const canSelectYear = (year: number) =>
+    isJalaliYearSelectable(year, constraints);
+  const canSelectMonth = (year: number, month: JalaliMonthIndex) =>
+    isJalaliMonthSelectable(year, month, constraints);
+  const previousPeriodDisabled =
+    viewLevel === "months"
+      ? !canSelectYear(activeYear - 1)
+      : !Array.from({ length: 10 }, (_, i) => decadeStartYear - 10 + i).some(
+          canSelectYear,
+        );
+  const nextPeriodDisabled =
+    viewLevel === "months"
+      ? !canSelectYear(activeYear + 1)
+      : !Array.from({ length: 10 }, (_, i) => decadeStartYear + 10 + i).some(
+          canSelectYear,
+        );
+
   const handlePrev = () => {
+    if (previousPeriodDisabled) return;
     if (viewLevel === "months") {
       const prevY = activeYear - 1;
       setActiveYear(prevY);
@@ -47,6 +82,7 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
   };
 
   const handleNext = () => {
+    if (nextPeriodDisabled) return;
     if (viewLevel === "months") {
       const nextY = activeYear + 1;
       setActiveYear(nextY);
@@ -93,7 +129,8 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
         flexDirection: "column",
         gap: "10px",
         width: "100%",
-        minWidth: "260px",
+        minWidth: 0,
+        maxWidth: "100%",
         height: "260px",
         padding: "6px",
         boxSizing: "border-box",
@@ -116,8 +153,21 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
         <button
           type="button"
           onClick={handlePrev}
+          disabled={previousPeriodDisabled}
+          aria-disabled={previousPeriodDisabled}
           aria-label="Previous"
-          style={navBtnStyle}
+          className={mergeClassNames(
+            classNames?.navButton,
+            previousPeriodDisabled && classNames?.disabledNavButton,
+          )}
+          style={{
+            ...navBtnStyle,
+            cursor: previousPeriodDisabled ? "not-allowed" : "pointer",
+            opacity: previousPeriodDisabled ? 0.38 : 1,
+            ...(previousPeriodDisabled
+              ? styles?.disabledNavButton
+              : undefined),
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor =
               "var(--pdp-hover-bg, #f1f5f9)";
@@ -212,8 +262,19 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
         <button
           type="button"
           onClick={handleNext}
+          disabled={nextPeriodDisabled}
+          aria-disabled={nextPeriodDisabled}
           aria-label="Next"
-          style={navBtnStyle}
+          className={mergeClassNames(
+            classNames?.navButton,
+            nextPeriodDisabled && classNames?.disabledNavButton,
+          )}
+          style={{
+            ...navBtnStyle,
+            cursor: nextPeriodDisabled ? "not-allowed" : "pointer",
+            opacity: nextPeriodDisabled ? 0.38 : 1,
+            ...(nextPeriodDisabled ? styles?.disabledNavButton : undefined),
+          }}
           onMouseEnter={(e) => {
             e.currentTarget.style.backgroundColor =
               "var(--pdp-hover-bg, #f1f5f9)";
@@ -252,11 +313,22 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
           ? PERSIAN_MONTH_NAMES.map((name, index) => {
               const isSelected =
                 index === currentMonth && activeYear === currentYear;
+              const isDisabled = !canSelectMonth(
+                activeYear,
+                index as JalaliMonthIndex,
+              );
               return (
                 <button
                   key={name}
                   type="button"
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
                   onClick={() => onSelectMonth(index as JalaliMonthIndex)}
+                  className={mergeClassNames(
+                    classNames?.monthButton,
+                    isSelected && classNames?.selectedMonthButton,
+                    isDisabled && classNames?.disabledMonthButton,
+                  )}
                   style={{
                     ...cellBtnBaseStyle,
                     background: isSelected
@@ -266,6 +338,11 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
                       ? "#ffffff"
                       : "var(--pdp-text-primary, #0f172a)",
                     fontWeight: isSelected ? 700 : 500,
+                    cursor: isDisabled ? "not-allowed" : "pointer",
+                    opacity: isDisabled ? 0.35 : 1,
+                    ...(styles?.monthButton ?? {}),
+                    ...(isSelected ? styles?.selectedMonthButton : undefined),
+                    ...(isDisabled ? styles?.disabledMonthButton : undefined),
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected)
@@ -284,11 +361,19 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
           : decadeYears.map((year, idx) => {
               const isOutlier = idx === 0 || idx === 11;
               const isSelected = year === activeYear;
+              const isDisabled = !canSelectYear(year);
 
               return (
                 <button
                   key={year}
                   type="button"
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
+                  className={mergeClassNames(
+                    classNames?.yearButton,
+                    isSelected && classNames?.selectedYearButton,
+                    isDisabled && classNames?.disabledYearButton,
+                  )}
                   onClick={() => {
                     setActiveYear(year);
                     onSelectYear(year);
@@ -305,7 +390,11 @@ export const MonthYearPicker: React.FC<MonthYearPickerProps> = ({
                         ? "var(--pdp-text-disabled, #94a3b8)"
                         : "var(--pdp-text-primary, #0f172a)",
                     fontWeight: isSelected ? 700 : 500,
-                    opacity: isOutlier ? 0.4 : 1,
+                    cursor: isDisabled ? "not-allowed" : "pointer",
+                    opacity: isDisabled ? 0.3 : isOutlier ? 0.4 : 1,
+                    ...(styles?.yearButton ?? {}),
+                    ...(isSelected ? styles?.selectedYearButton : undefined),
+                    ...(isDisabled ? styles?.disabledYearButton : undefined),
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected)

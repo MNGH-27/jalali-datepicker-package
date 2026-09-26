@@ -4,6 +4,7 @@ export * from "./core/constants";
 export * from "./core/jalali-math";
 export * from "./core/calendar-grid";
 export * from "./core/jalali-helpers";
+export * from "./core/date-availability";
 
 // --- State Management Hooks ---
 export * from "./hooks/types";

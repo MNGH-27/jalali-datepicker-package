@@ -5,6 +5,7 @@ import type {
   DatePickerStyles,
 } from "../theme/style-slots";
 import { useTheme } from "../theme/ThemeProvider";
+import { mergeClassNames } from "../theme/style-utils";
 
 export interface HeaderProps {
   year: number;
@@ -15,6 +16,8 @@ export interface HeaderProps {
   isPickerOpen?: boolean;
   digitType?: "persian" | "latin";
   direction?: "rtl" | "ltr";
+  isPrevDisabled?: boolean;
+  isNextDisabled?: boolean;
   classNames?: DatePickerClassNames;
   styles?: DatePickerStyles;
 }
@@ -30,6 +33,8 @@ export const Header: React.FC<HeaderProps> = ({
   isPickerOpen = false,
   digitType = "persian",
   direction = "rtl",
+  isPrevDisabled = false,
+  isNextDisabled = false,
   classNames,
   styles,
 }) => {
@@ -38,7 +43,10 @@ export const Header: React.FC<HeaderProps> = ({
   const displayYear =
     digitType === "persian" ? toPersianDigits(year) : String(year);
 
-  const navStyle = (target: Exclude<HoverTarget, "title" | null>) => ({
+  const navStyle = (
+    target: Exclude<HoverTarget, "title" | null>,
+    disabled: boolean,
+  ) => ({
     width: "32px",
     height: "32px",
     padding: 0,
@@ -47,12 +55,14 @@ export const Header: React.FC<HeaderProps> = ({
     backgroundColor:
       hovered === target ? theme.colors.backgroundHover : "transparent",
     color: theme.colors.textPrimary,
-    cursor: "pointer",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.38 : 1,
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
     transition: "background-color 0.15s ease, color 0.15s ease",
     ...styles?.navButton,
+    ...(disabled ? styles?.disabledNavButton : undefined),
   });
 
   return (
@@ -74,9 +84,14 @@ export const Header: React.FC<HeaderProps> = ({
       <button
         type="button"
         onClick={onPrevMonth}
+        disabled={isPrevDisabled}
+        aria-disabled={isPrevDisabled}
         aria-label="ماه قبل"
-        className={classNames?.navButton}
-        style={navStyle("prev")}
+        className={mergeClassNames(
+          classNames?.navButton,
+          isPrevDisabled && classNames?.disabledNavButton,
+        )}
+        style={navStyle("prev", isPrevDisabled)}
         onMouseEnter={() => setHovered("prev")}
         onMouseLeave={() => setHovered(null)}
       >
@@ -150,9 +165,14 @@ export const Header: React.FC<HeaderProps> = ({
       <button
         type="button"
         onClick={onNextMonth}
+        disabled={isNextDisabled}
+        aria-disabled={isNextDisabled}
         aria-label="ماه بعد"
-        className={classNames?.navButton}
-        style={navStyle("next")}
+        className={mergeClassNames(
+          classNames?.navButton,
+          isNextDisabled && classNames?.disabledNavButton,
+        )}
+        style={navStyle("next", isNextDisabled)}
         onMouseEnter={() => setHovered("next")}
         onMouseLeave={() => setHovered(null)}
       >

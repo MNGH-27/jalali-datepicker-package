@@ -7,6 +7,7 @@ import type {
   DatePickerClassNames,
   DatePickerStyles,
 } from "../theme/style-slots";
+import { mergeClassNames } from "../theme/style-utils";
 
 export interface DayCellProps {
   cell: JalaliCalendarCell;
@@ -103,9 +104,43 @@ export const DayCell: React.FC<DayCellProps> = ({
   }
 
   // رنگ روزهای تعطیل در صورت عدم انتخاب
-  if (isHoliday && isCurrentMonth && !isSelected && !isEdgeOfRange) {
+  if (
+    isHoliday &&
+    isCurrentMonth &&
+    !isDisabled &&
+    !isSelected &&
+    !isEdgeOfRange
+  ) {
     textColor = "var(--pdp-holiday-color, #e11d48)";
   }
+
+  if (isDisabled) {
+    cellBg = "var(--pdp-disabled-bg, #f1f5f9)";
+    textColor = "var(--pdp-text-disabled, #94a3b8)";
+  }
+
+  const stateClassName = mergeClassNames(
+    classNames?.dayCell,
+    isToday && classNames?.todayCell,
+    isSelected && classNames?.selectedCell,
+    isInRange && classNames?.rangeBetweenCell,
+    isRangeStart && classNames?.rangeStartCell,
+    isRangeEnd && classNames?.rangeEndCell,
+    isDisabled && classNames?.disabledCell,
+    !isCurrentMonth && classNames?.outsideMonthCell,
+    isHoliday && classNames?.holidayCell,
+  );
+
+  const stateStyles: React.CSSProperties = {
+    ...(isToday ? styles?.todayCell : undefined),
+    ...(isSelected ? styles?.selectedCell : undefined),
+    ...(isInRange ? styles?.rangeBetweenCell : undefined),
+    ...(isRangeStart ? styles?.rangeStartCell : undefined),
+    ...(isRangeEnd ? styles?.rangeEndCell : undefined),
+    ...(!isCurrentMonth ? styles?.outsideMonthCell : undefined),
+    ...(isHoliday ? styles?.holidayCell : undefined),
+    ...(isDisabled ? styles?.disabledCell : undefined),
+  };
 
   // انیمیشن transform بر اساس حالت‌های مختلف
   let transform = "scale(1)";
@@ -124,8 +159,9 @@ export const DayCell: React.FC<DayCellProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        width: "var(--pdp-cell-size, 34px)",
-        height: "var(--pdp-cell-size, 34px)",
+        width: "100%",
+        minWidth: 0,
+        aspectRatio: "1 / 1",
         margin: 0,
         padding: 0,
         boxSizing: "border-box",
@@ -138,6 +174,7 @@ export const DayCell: React.FC<DayCellProps> = ({
         role="gridcell"
         tabIndex={tabIndex}
         disabled={isDisabled || !isCurrentMonth}
+        aria-disabled={isDisabled || !isCurrentMonth}
         aria-selected={isSelected}
         aria-label={`${jalali.year}/${jalali.month + 1}/${jalali.day}${
           holidayTitle ? ` - ${holidayTitle}` : ""
@@ -146,7 +183,7 @@ export const DayCell: React.FC<DayCellProps> = ({
         onFocus={handleFocus}
         onMouseDown={() => isInteractive && setIsPressed(true)}
         onMouseUp={() => isInteractive && setIsPressed(false)}
-        className={classNames?.dayCell}
+        className={stateClassName}
         style={{
           width: "100%",
           height: "100%",
@@ -167,7 +204,7 @@ export const DayCell: React.FC<DayCellProps> = ({
               : "none",
           backgroundColor: cellBg,
           color: textColor,
-          cursor: isInteractive ? "pointer" : "default",
+          cursor: isDisabled ? "not-allowed" : isInteractive ? "pointer" : "default",
           fontSize: "13px",
           fontWeight: isSelected || isToday ? 700 : 500,
           outline: "none",
@@ -184,7 +221,10 @@ export const DayCell: React.FC<DayCellProps> = ({
           transition:
             "transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.14s ease, color 0.14s ease, box-shadow 0.16s ease",
           zIndex: isHovered && isInteractive ? 2 : 1,
+          opacity: isDisabled ? 0.42 : isCurrentMonth ? 1 : 0.55,
+          filter: isDisabled ? "grayscale(0.65)" : undefined,
           ...styles?.dayCell,
+          ...stateStyles,
         }}
       >
         <span>{formattedDay}</span>

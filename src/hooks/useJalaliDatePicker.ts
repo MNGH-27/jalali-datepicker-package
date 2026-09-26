@@ -9,6 +9,7 @@ import type { JalaliDate, JalaliMonthIndex } from "../core/types";
 import { getTodayJalali, isSameJalaliDay } from "../core/jalali-math";
 import { generateJalaliCalendarGrid } from "../core/calendar-grid";
 import { isJalaliDateBetween } from "../core/jalali-helpers";
+import { isJalaliDateSelectable } from "../core/date-availability";
 
 export function useJalaliDatePicker<M extends SelectionMode = "single">(
   options: UseJalaliDatePickerOptions<M> = {},
@@ -56,6 +57,16 @@ export function useJalaliDatePicker<M extends SelectionMode = "single">(
 
   const [hoverDate, setHoverDate] = useState<JalaliDate | null>(null);
 
+  const canSelectDate = useCallback(
+    (date: JalaliDate) =>
+      isJalaliDateSelectable(date, {
+        minDate,
+        maxDate,
+        isDateDisabled,
+      }),
+    [minDate, maxDate, isDateDisabled],
+  );
+
   const setView = useCallback((year: number, month: JalaliMonthIndex) => {
     setViewYear(year);
     setViewMonth(month);
@@ -87,6 +98,8 @@ export function useJalaliDatePicker<M extends SelectionMode = "single">(
 
   const selectDate = useCallback(
     (date: JalaliDate) => {
+      if (!canSelectDate(date)) return;
+
       let nextValue: InternalSelectedValue<M>;
 
       if (mode === "single") {
@@ -127,7 +140,26 @@ export function useJalaliDatePicker<M extends SelectionMode = "single">(
       }
       onChange?.(nextValue);
     },
-    [mode, selected, controlledValue, onChange],
+    [mode, selected, controlledValue, onChange, canSelectDate],
+  );
+
+  const isDateSelected = useCallback(
+    (date: JalaliDate): boolean => {
+      if (mode === "single") {
+        return isSameJalaliDay(selected as JalaliDate | null, date);
+      }
+      if (mode === "range") {
+        const [start, end] = (selected as JalaliDateRange) || [null, null];
+        return Boolean(
+          (start && isSameJalaliDay(start, date)) ||
+            (end && isSameJalaliDay(end, date)),
+        );
+      }
+      return ((selected as JalaliDate[]) || []).some((item) =>
+        isSameJalaliDay(item, date),
+      );
+    },
+    [mode, selected],
   );
 
   const clear = useCallback(() => {
@@ -215,6 +247,7 @@ export function useJalaliDatePicker<M extends SelectionMode = "single">(
     goToToday,
     setView,
     selectDate,
+    isDateSelected,
     setHoverDate,
     hoverDate,
     clear,

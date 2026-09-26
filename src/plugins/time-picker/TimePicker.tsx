@@ -194,6 +194,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        flexWrap: "wrap",
         gap: "6px",
         padding: "6px 12px",
         borderTop: "1px solid var(--pdp-surface-border, #e2e8f0)",
@@ -202,6 +203,9 @@ export const TimePicker: React.FC<TimePickerProps> = ({
           "0 0 var(--pdp-border-radius, 10px) var(--pdp-border-radius, 10px)",
         direction: "ltr",
         userSelect: "none",
+        width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box",
         ...styles?.timePicker,
       }}
     >

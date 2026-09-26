@@ -46,6 +46,12 @@ export interface DatePickerSlots<T> {
   rangeEndCell?: T;
   /** Disabled day cell */
   disabledCell?: T;
+  /** Disabled month option */
+  disabledMonthButton?: T;
+  /** Disabled year option */
+  disabledYearButton?: T;
+  /** Disabled previous/next navigation button */
+  disabledNavButton?: T;
   /** Day cell belonging to the previous/next month */
   outsideMonthCell?: T;
   /** Official holiday day cell */

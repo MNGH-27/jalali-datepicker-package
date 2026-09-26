@@ -50,6 +50,7 @@ import type {
   DatePickerClassNames,
   DatePickerStyles,
 } from "../theme/style-slots";
+import { isJalaliMonthSelectable } from "../core/date-availability";
 
 export interface JalaliDatePickerProps<M extends SelectionMode = "single"> {
   mode?: M;
@@ -235,6 +236,12 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     [maxDate],
   );
 
+  const internalIsDateDisabled = useCallback(
+    (jDate: JalaliDate) =>
+      isDateDisabled ? isDateDisabled(jalaliToJsDate(jDate)) : false,
+    [isDateDisabled],
+  );
+
   const convertJalaliToDateOutput = useCallback(
     (
       jVal: InternalSelectedValue<M>,
@@ -295,9 +302,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     minDate: internalMinDate,
     maxDate: internalMaxDate,
     firstDayOfWeek,
-    isDateDisabled: isDateDisabled
-      ? (jDate: JalaliDate) => isDateDisabled(jalaliToJsDate(jDate))
-      : undefined,
+    isDateDisabled: isDateDisabled ? internalIsDateDisabled : undefined,
     onChange: (val) => {
       onChange?.(convertJalaliToDateOutput(val));
     },
@@ -363,6 +368,34 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     if (viewMonth === 11) return { year: viewYear + 1, month: 0 };
     return { year: viewYear, month: (viewMonth + 1) as JalaliMonthIndex };
   }, [viewYear, viewMonth]);
+
+  const prevMonthState = useMemo<{
+    year: number;
+    month: JalaliMonthIndex;
+  }>(() => {
+    if (viewMonth === 0) return { year: viewYear - 1, month: 11 };
+    return { year: viewYear, month: (viewMonth - 1) as JalaliMonthIndex };
+  }, [viewYear, viewMonth]);
+
+  const isPrevMonthDisabled = !isJalaliMonthSelectable(
+    prevMonthState.year,
+    prevMonthState.month,
+    { minDate: internalMinDate, maxDate: internalMaxDate },
+  );
+  const nextNavigationState =
+    numberOfMonths === 2
+      ? nextMonthState.month === 11
+        ? { year: nextMonthState.year + 1, month: 0 as JalaliMonthIndex }
+        : {
+            year: nextMonthState.year,
+            month: (nextMonthState.month + 1) as JalaliMonthIndex,
+          }
+      : nextMonthState;
+  const isNextMonthDisabled = !isJalaliMonthSelectable(
+    nextNavigationState.year,
+    nextNavigationState.month,
+    { minDate: internalMinDate, maxDate: internalMaxDate },
+  );
 
   const secondGrid = useMemo<JalaliCalendarCell[]>(() => {
     if (numberOfMonths !== 2) return [];
@@ -450,9 +483,13 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
     showNextArrow = true,
   ) => (
     <div
+      className={classNames?.calendarPane}
       style={{
         width: "calc(7 * var(--pdp-cell-size, 34px) + 6 * 4px)",
-        flexShrink: 0,
+        maxWidth: "100%",
+        minWidth: 0,
+        flex: "1 1 calc(7 * var(--pdp-cell-size, 34px) + 6 * 4px)",
+        ...styles?.calendarPane,
       }}
     >
       <Header
@@ -462,6 +499,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         onNextMonth={showNextArrow ? goToNextMonth : () => {}}
         onTitleClick={() => setShowMonthYearPicker((prev) => !prev)}
         isPickerOpen={showMonthYearPicker}
+        isPrevDisabled={showPrevArrow ? isPrevMonthDisabled : true}
+        isNextDisabled={showNextArrow ? isNextMonthDisabled : true}
         classNames={classNames}
         styles={styles}
       />
@@ -478,7 +517,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
         className={classNames?.grid}
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(7, var(--pdp-cell-size, 34px))",
+          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
           gap: "4px",
           justifyContent: "center",
           alignItems: "center",
@@ -534,6 +573,11 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
           ? "0 20px 25px -5px rgb(0 0 0 / 0.3)"
           : "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
         width: "max-content",
+        maxWidth:
+          variant === "inline" ? "100%" : "calc(100vw - 24px)",
+        maxHeight: isModal ? "calc(100dvh - 32px)" : undefined,
+        overflowY: isModal ? "auto" : undefined,
+        overflowX: "hidden",
         userSelect: "none",
         display: "flex",
         flexDirection: "column",
@@ -552,19 +596,29 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
             setShowMonthYearPicker(false);
           }}
           onSelectYear={(y) => setView(y, viewMonth)}
+          minDate={internalMinDate}
+          maxDate={internalMaxDate}
+          isDateDisabled={
+            isDateDisabled ? internalIsDateDisabled : undefined
+          }
           classNames={classNames}
           styles={styles}
         />
       ) : (
         <>
           <div
+            className={classNames?.calendarPanes}
             style={{
               display: "flex",
               flexDirection: "row",
-              flexWrap: "nowrap",
+              flexWrap: "wrap",
               gap: "20px",
               alignItems: "flex-start",
               justifyContent: "center",
+              width: "100%",
+              minWidth: 0,
+              boxSizing: "border-box",
+              ...styles?.calendarPanes,
             }}
           >
             {renderCalendarPane(
@@ -577,14 +631,6 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
 
             {numberOfMonths === 2 && (
               <>
-                <div
-                  style={{
-                    width: "1px",
-                    alignSelf: "stretch",
-                    backgroundColor: "var(--pdp-surface-border, #e2e8f0)",
-                    margin: "0 2px",
-                  }}
-                />
                 {renderCalendarPane(
                   nextMonthState.year,
                   nextMonthState.month,
@@ -641,6 +687,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
       style={{
         position: "relative",
         display: "inline-block",
+        maxWidth: "100%",
+        verticalAlign: "top",
         zIndex: isOpen && variant === "popover" ? zIndex : 1,
         ...style,
         ...styles?.root,
@@ -681,6 +729,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               cursor: "pointer",
               direction: "ltr",
               width: "100%",
+              maxWidth: "100%",
             }}
           >
             <input
@@ -701,6 +750,7 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
                 fontSize: "13.5px",
                 minWidth: enableTime ? "190px" : "150px",
                 width: "100%",
+                maxWidth: "100%",
                 boxSizing: "border-box",
                 ...styles?.input,
               }}
@@ -762,6 +812,8 @@ export function JalaliDatePicker<M extends SelectionMode = "single">({
               alignItems: "center",
               justifyContent: "center",
               padding: "16px",
+              boxSizing: "border-box",
+              overflowY: "auto",
               direction: "rtl",
               ...styles?.modalBackdrop,
             }}

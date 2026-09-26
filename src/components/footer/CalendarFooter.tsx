@@ -72,6 +72,9 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
         justifyContent: showStatusText ? "space-between" : "flex-end",
         flexWrap: "wrap",
         gap: "8px",
+        width: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
         padding: "10px 0 0",
         borderTop: `1px solid ${theme.colors.border}`,
         color: theme.colors.textPrimary,
@@ -85,6 +88,8 @@ export const CalendarFooter: React.FC<CalendarFooterProps> = ({
             color: theme.colors.textSecondary,
             fontSize: "0.78rem",
             lineHeight: 1.5,
+            minWidth: 0,
+            overflowWrap: "anywhere",
             ...styles?.footerStatus,
           }}
         >
